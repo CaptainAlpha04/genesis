@@ -8,6 +8,7 @@ declare module "next-auth" {
   interface Session {
     user: {
       id: string;
+      name: string;
     } & DefaultSession["user"];
   }
 }
@@ -57,6 +58,7 @@ const authOptions: NextAuthOptions = {
         const existingUser = await User.findOne({ email: session.user.email });
         if (existingUser) {
           session.user.id = existingUser._id.toString();
+          session.user.name = existingUser.name;
         }
       }
       return session;

@@ -1,13 +1,13 @@
-'use client'
-import React, { useState, useEffect } from 'react';
-import { useSession,signOut } from "next-auth/react";
+"use client";
+import React, { useState, useEffect } from "react";
+import { useSession, signOut } from "next-auth/react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-
 async function fetchConvo(value: string) {
-    const response = await fetch('http://localhost:8000/convo', {
-        method: 'POST',
+    const response = await fetch("http://localhost:8000/convo", {
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
         },
         body: JSON.stringify({ message: value }),
     });
@@ -18,8 +18,8 @@ async function fetchConvo(value: string) {
 }
 
 function Page() {
-    const [inputValue, setInputValue] = useState('');
-    const [response, setResponse] = useState('');
+    const [inputValue, setInputValue] = useState("");
+    const [response, setResponse] = useState("");
     const { data: session, status } = useSession();
     const router = useRouter();
 
@@ -31,6 +31,8 @@ function Page() {
 
         if (!session) {
             router.push("/login");
+        }else {
+            console.log("User ID:", session.user.id);
         }
     }, [router, session, status]);
 
@@ -38,27 +40,31 @@ function Page() {
         setInputValue((event.target as HTMLInputElement).value);
     };
 
+    const handleChatClick = () => {
+        router.push("/chat");
+    };
     const handleSubmit = async (): Promise<void> => {
         const messageToSend = inputValue;
-        setInputValue('');
+        setInputValue("");
         const message = await fetchConvo(messageToSend);
         setResponse(message);
     };
 
     if (status === "loading") {
-        return <div className="flex justify-center items-center min-h-screen">
-        <div className="border-t-4 border-gray-500 rounded-full animate-spin h-14 w-14"></div>
-    </div>
-     // Or a spinner/loading component
+        return (
+            <div className="flex justify-center items-center min-h-screen">
+                <div className="border-t-4 border-gray-500 rounded-full animate-spin h-14 w-14"></div>
+            </div>
+        );
+        // Or a spinner/loading component
     }
 
     return (
         <>
             {/* Top Level Screen View */}
-            <section className='h-screen flex flex-row'>
-
+            <section className="h-screen flex flex-row">
                 {/* Side Bar */}
-                <section className='w-1/4 h-screen bg-base-200'>
+                <section className="w-1/4 h-screen bg-base-200">
                     {/* Sign Out Button */}
                     <button
                         onClick={() => signOut()}
@@ -66,15 +72,22 @@ function Page() {
                     >
                         Sign Out
                     </button>
+                    <button
+                        className="btn btn-primary m-4"
+                        onClick={handleChatClick}
+                    >
+                        Chat
+                    </button>
+          
                 </section>
                 {/* Main Content */}
-                <section className='w-3/4 h-screen'>
-                    <div className='w-full flex flex-col'>
-                        <p className='p-10 text-lg'>{response}</p>
+                <section className="w-3/4 h-screen">
+                    <div className="w-full flex flex-col">
+                        <p className="p-10 text-lg">{response}</p>
                     </div>
 
                     {/* Input Section */}
-                    <div className='w-full flex flex-row items-center bottom-0 absolute my-5 gap-2 mx-10'>
+                    <div className="w-full flex flex-row items-center bottom-0 absolute my-5 gap-2 mx-10">
                         <i className="fi fi-rr-clip text-2xl btn btn-ghost"></i>
                         <i className="fi fi-rr-smile text-2xl btn btn-ghost"></i>
                         <input
@@ -82,10 +95,15 @@ function Page() {
                             className="input input-md w-3/5 text-lg"
                             value={inputValue}
                             onChange={handleInputChange}
-                            onKeyDown={(e) => { e.key === 'Enter' && handleSubmit() }}
-                            placeholder='Enter your message'
+                            onKeyDown={(e) => {
+                                e.key === "Enter" && handleSubmit();
+                            }}
+                            placeholder="Enter your message"
                         />
-                        <button onClick={handleSubmit} className="btn btn-primary">
+                        <button
+                            onClick={handleSubmit}
+                            className="btn btn-primary"
+                        >
                             <i className="fi fi-rr-paper-plane-top font-bold"></i>
                         </button>
                     </div>

@@ -9,8 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@firebase/firestore": "^4.6.4",
     "daisyui": "^4.12.10",
     "dotenv": "^16.4.5",
+    "firebase": "^10.12.3",
     "mongoose": "^8.4.4",
     "next": "14.2.4",
     "next-auth": "^4.24.7",
