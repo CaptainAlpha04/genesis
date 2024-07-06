@@ -106,8 +106,8 @@ async function loadBots() {
 async function startConversationWithBot(reqBody) {
     const {userID, userName, botName, message} = reqBody
     const ActorBot = bots[botName]
-    // const allBots = {...bots}
-    // bots = allBots.filter(bot => bot.personalInfo.Name !== botName)
+    const allBots = {...bots}
+    bots = allBots.filter(bot => bot.personalInfo.Name !== botName)
     if(ActorBot) {
         console.log('Conversation between ' + userName + " with ID " + userID + ' and ' + botName)
         ConverseWithBot(ActorBot, message)
