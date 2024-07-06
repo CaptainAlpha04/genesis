@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from '@google/generative-ai';
 import dotenv from 'dotenv';
+import bot from '../model/botSchema.mjs';
 dotenv.config();
 
 const safetySettings = [
@@ -16,24 +17,40 @@ class ActorModel {
         this.chat = null;
     }
 
-    async callActorModel(chatMessage) {
-        const genAI = new GoogleGenerativeAI(Math.random() < 0.5 ? process.env.ACTOR_MODEL_API : process.env.GENERATOR_MODEL_API);
+    async getChat() {
+        return this.chat;
+    }
+
+    async setChat(chat) {
+        this.chat = chat;
+    }
+
+    async callActorModel(chatMessage, userID, botName) {
+        const genAI = new GoogleGenerativeAI(Math.random() < 0.5 ? process.env.ACTOR_MODEL_API_ONE : process.env.ACTOR_MODEL_API_TWO);
         await this.sleep(10000);  // Ensuring a delay
 
         if (!this.chat) {
+            const chatHistory = await this.loadChatHistory(userID, botName);
             const model = await genAI.getGenerativeModel({
                 model: 'gemini-1.5-pro',
                 systemInstruction: this.ActorSystemInstructs,
-                safetySettings
+                safetySettings,
+                generationConfig: {
+                    responseMimeType: 'application/json',
+                }
             });
-            this.chat = model.startChat();
+            this.chat = model.startChat({
+                history: chatHistory,
+                generationConfig: {
+                    responseMimeType: 'application/json',
+                }
+            });
         }
 
         const prompt = chatMessage || `"Starts the conversation"`;
 
         try {
             const result = await this.retryWithBackoff(async () => {
-                console.log(this.chat.getHistory());
                 return await this.chat.sendMessage(prompt);
             });
             return result.response.text();
@@ -41,6 +58,20 @@ class ActorModel {
             console.error('Failed to get response:', error);
             return '';
         }
+    }
+
+    async loadChatHistory(userID, botName) {
+        const botDocument = await bot.findOne({ 'personalInfo.Name': botName });
+        if (botDocument && botDocument.ChatHistory) {
+            const userChatHistory = botDocument.ChatHistory.find(chat => chat.userID === userID);
+            if (userChatHistory && userChatHistory.chat) {
+                return userChatHistory.chat.flatMap(entry => [
+                    { role: 'user', parts: [{ text: entry.user }] },
+                    { role: 'model', parts: [{ text: entry.bot }] }
+                ]);
+            }
+        }
+        return [];
     }
 
     async sleep(ms) {

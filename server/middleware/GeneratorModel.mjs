@@ -4,7 +4,7 @@ dotenv.config();
 
 const genAI = new GoogleGenerativeAI(process.env.GENERATOR_MODEL_API);
 
-export async function GeneratorModel(request) {
+async function GeneratorModel(request) {
     const model = await genAI.getGenerativeModel({
         model: 'gemini-1.5-pro',
         systemInstruction: process.env.GENERATOR_SYSTEM_INSTRUCTS,
@@ -38,3 +38,5 @@ export async function GeneratorModel(request) {
         return null;
     }
 }
+
+export default GeneratorModel;

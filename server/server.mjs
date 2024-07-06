@@ -1,23 +1,23 @@
-import express from 'express'
-import { GeneratorModel } from './middleware/GeneratorModel.mjs'
-import ActorModel from './middleware/ActorModel.mjs'
-import botSchema from './model/botSchema.mjs'
-import mongoose from 'mongoose'
-import cors from 'cors'
-import dotenv from 'dotenv'
-import bot from './model/botSchema.mjs'
-dotenv.config()
+import express from 'express';
+import GeneratorModel from './middleware/GeneratorModel.mjs';
+import ActorModel from './middleware/ActorModel.mjs';
+import ManagerModel from './middleware/ManagerModel.mjs';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import bot from './model/botSchema.mjs';
+dotenv.config();
 
 // Middlewares
-const app = express()
-const PORT = process.env.PORT || 8000
-app.use(express.json())
-app.use(cors())
+const app = express();
+const PORT = process.env.PORT || 8000;
+app.use(express.json());
+app.use(cors());
 
 // Connecting to MongoDB database
 mongoose.connect('mongodb://localhost:27017')
-.then(()=> {console.log('Connected to MongoDB')})
-.catch((err) => console.log(err))
+    .then(() => { console.log('Connected to MongoDB'); })
+    .catch((err) => console.log(err));
 
 // Generating a model for a bot
 async function GenerateModel(prompt) {
@@ -25,10 +25,11 @@ async function GenerateModel(prompt) {
         const model = await GeneratorModel(prompt || 'Generate a persona');
         if (model) {
             const newBot = new bot({
-                personalInfo:{
+                personalInfo: {
                     Name: model.Name,
                     Age: model.Age,
                     Ethnicity: model.Ethnicity,
+                    Education: model.Education,
                     Profession: model.Profession,
                     SkillSet: model.SkillSet,
                     Hobbies: model.Hobbies,
@@ -49,115 +50,140 @@ async function GenerateModel(prompt) {
             console.error('Model does not have the expected structure:', model);
         }
     } catch (error) {
-        console.log('Error generating model:', error)
+        console.log('Error generating model:', error);
     }
 }
+
+//await GenerateModel('Generate a caucasian male');
+//await GenerateModel('Generate a palestinian woman');
+//await GenerateModel('Generate a Asian American male');
 
 // Simulation of a conversation between two bots
 async function simulation() {
     const personA = await GeneratorModel('Generate a persona');
     const personB = await GeneratorModel('Generate a persona');
-    console.log(personA, personB)
+    console.log(personA, personB);
 
     // Initializing two actor models objects
-    const ActorA = new ActorModel(personA)
-    const ActorB = new ActorModel(personB)
+    const ActorA = new ActorModel(personA);
+    const ActorB = new ActorModel(personB);
 
     let responseA = '';
     let responseB = '';
-    
-    console.log('Conversation between personA and personB')
-    while(true) {
-        responseA = await ActorA.callActorModel(responseB)
-        console.log('PersonA:', responseA)
-        responseB = await ActorB.callActorModel(responseA)
-        console.log('PersonB:', responseB)
+
+    console.log('Conversation between personA and personB');
+    while (true) {
+        responseA = await ActorA.callActorModel(responseB);
+        console.log('PersonA:', responseA);
+        responseB = await ActorB.callActorModel(responseA);
+        console.log('PersonB:', responseB);
     }
 }
-
-
-let firstTime = true
-// Conversation between a bot and a human
-async function conversation(message) {
-    if (firstTime) {
-        const bot = await GeneratorModel('Generate a persona')
-        ActorBot = new ActorModel(bot)
-        firstTime = false
-    }
-
-    return await ActorBot.callActorModel(message)
-}
-
 
 // Load all the bots from the database
-let bots = {}
+let bots = {};
 // Activates the bots
 async function loadBots() {
-    bots = await bot.find()
-    if(bots) {
-        for (const bot of bots) {
-            const ActorBot = new ActorModel(bot.personalInfo)
-            bots[bot.personalInfo.Name] = ActorBot
-            console.log(bot.personalInfo.Name + ' is Online...')
+    const botDocuments = await bot.find();
+    if (botDocuments) {
+        for (const botDocument of botDocuments) {
+            const ActorBot = new ActorModel(botDocument.personalInfo);
+            bots[botDocument.personalInfo.Name] = ActorBot;
+            console.log(botDocument.personalInfo.Name + ' is Online...');
         }
     }
 }
 
-async function startConversationWithBot(reqBody) {
-    const {userID, userName, botName, message} = reqBody
-    const ActorBot = bots[botName]
-    const allBots = {...bots}
-    bots = allBots.filter(bot => bot.personalInfo.Name !== botName)
-    if(ActorBot) {
-        console.log('Conversation between ' + userName + " with ID " + userID + ' and ' + botName)
-        ConverseWithBot(ActorBot, message)
-        return ActorBot
+// Starts a conversation with a bot
+async function startConversationWithBot(reqBody, userID) {
+    const { userName, botName, message } = reqBody;
+    const ActorBot = bots[botName];
+    if (ActorBot) {
+        console.log('Conversation between ' + userName + " with ID " + userID + ' and ' + botName);
+        const response = await ConverseWithBot(ActorBot, botName, message, userID);
+        delete bots[botName];
+        return [ActorBot, response];
     } else {
-        console.log('Bot not found')
-        return null
+        console.log('Bot not found');
+        return [];
     }
 }
 
-async function ConverseWithBot(ActorBot, message) {
-    const response = await ActorBot.callActorModel(message)
-    console.log('Bot:', response)
-    // Save the conversation to the database
-
+// Method to communicate with the bot and update the database
+async function ConverseWithBot(ActorBot, botName, message, userID) {
+    const response = await ActorBot.callActorModel(message, userID, botName);
+    await saveChatHistory(botName, userID, message, response);
+    await ManageAdditionalInfo(botName, response);
+    console.log('Bot:', response);
+    return response;
 }
 
+// Save chat history to the database
+async function saveChatHistory(botName, userID, userMessage, botResponse) {
+    const botDocument = await bot.findOne({ 'personalInfo.Name': botName });
+    if (botDocument) {
+        // Find the chat history for the given userID
+        let userChatHistory = botDocument.ChatHistory.find(chat => chat.userID === userID);
 
-await loadBots()
+        if (!userChatHistory) {
+            // If no chat history exists for this userID, create a new one
+            userChatHistory = { userID: userID, chat: [] };
+            botDocument.ChatHistory.push(userChatHistory);
+        }
 
+        // Append the user and bot messages as a nested structure
+        userChatHistory.chat.push({ user: userMessage, bot: botResponse });
+
+        await botDocument.save();
+        console.log('Chat history updated for', botName);
+    } else {
+        console.log('Bot document not found');
+    }
+}
+
+// Manages the additional information of the bot
+async function ManageAdditionalInfo(botName, response) {
+    const newInfo = (await ManagerModel(response)).trim();
+    if (newInfo !== 'NNIP') {
+        const botDocument = await bot.findOne({ 'personalInfo.Name': botName });
+        if (botDocument) {
+            botDocument.AdditionalInfo = (botDocument.AdditionalInfo || '') + "\n" + newInfo;
+            await botDocument.save();
+            console.log('Updated AdditionalInfo:', botDocument.AdditionalInfo);
+        } else {
+            console.log('Bot document not found');
+        }
+    }
+}
+
+// Function Call to load the bots
+await loadBots();
+
+// Starts the simulation
 app.get('/', (req, res) => {
-    simulation()
-    res.send({ message: 'Simulation started' })
-})
+    simulation();
+    res.send({ message: 'Simulation started' });
+});
 
-let ConnectBot = false
-let ActorBot
+// global variables to keep track of the conversation
+let ConnectBot = false;
+let ActorBot;
 
-app.post('/conversation', async (req, res) => {
+// Conversation with bot based on UserID
+app.post('/conversation/:userID', async (req, res) => {
+    const userID = req.params.userID;
+    let response = '';
+    const { message, botName } = req.body;
     if (ConnectBot) {
-        const {message} = req.body;
-        ConverseWithBot(ActorBot, message || '')
+        response = await ConverseWithBot(ActorBot, botName, message || '', userID);
     } else {
-        ActorBot = await startConversationWithBot(req.body)
-        console.log(ActorBot)
-        ConnectBot = true
+        [ActorBot, response] = await startConversationWithBot(req.body, userID);
+        ConnectBot = true;
     }
-    res.send({message: 'Conversation started'})
-})
+    res.send({ message: `${response || "Conversation started"}` });
+});
 
-app.post('/convo', async (req, res) => {
-    const message = req.body.message
-    console.log(`User: ${message}`)
-    const response = await conversation(message)
-    console.log(`Bot: ${response}`)
-    //GenerateModel(message)
-    res.send({ message: `${response || "Conversation started"}` })
-    //res.send({message: 'Conversation started'})
-})
-
+// Start the server
 app.listen(PORT, () => {
-    console.log(`Listening on Port ${PORT}...`)
-})
+    console.log(`Listening on Port ${PORT}...`);
+});

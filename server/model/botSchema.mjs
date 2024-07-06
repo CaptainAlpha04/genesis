@@ -7,7 +7,7 @@ const botSchema = new mongoose.Schema({
         Ethnicity: String,
         Education: String,
         Profession: String,
-        SkillSet: [String], // Updated to be an array of strings
+        SkillSet: [String],
         Hobbies: [String],
         Interests: [String],
         Looks: String,
@@ -21,16 +21,14 @@ const botSchema = new mongoose.Schema({
     AdditionalInfo: {
         type: String,
     },
-    ChatHistory: {
-        UserID: String,
-        chats: [
-            {
-                message: String,
-                time: String,
-                sender: String,
-            }
-        ]
-    }
+    ChatHistory: [
+        {
+            userID: String,
+            chat: [
+                { user: String, bot: String }
+            ]
+        }
+    ]
 });
 
 const bot = mongoose.model('Bot', botSchema);
