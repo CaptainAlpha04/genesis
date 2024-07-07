@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { set } from "mongoose";
 
 async function fetchBots() {
     const response = await fetch("http://localhost:8000/fetchBots");
@@ -27,13 +28,27 @@ async function conversation(message: string, botName: string, userId: string, us
     return answer;
 }
 
+async function fetchChatHistory(userID: string, botName: string) {
+    const response = await fetch(`http://localhost:8000/fetchChatHistory/${userID}/${botName}`);
+    const data = await response.json();
+    const chatHistory = await data.chatHistory
+    return chatHistory
+
+}
+
 function Page() {
     const [bots, setBots] = useState([]);
     const [convoBot, setConvoBot] = useState("");
     const [inputValue, setInputValue] = useState("");
     const [response, setResponse] = useState("");
+    const [chatHistory, setChatHistory] = useState([]);
     const { data: session, status } = useSession();
     const router = useRouter();
+
+    const selectedBot = async (bot: string) => {
+        setConvoBot(bot);
+        setChatHistory(await fetchChatHistory(session?.user?.id ?? '', bot));
+    }
 
     useEffect(() => {
         const fetchData = async () => {
@@ -42,6 +57,7 @@ function Page() {
         };
         fetchData();
     }, []);
+    
 
     useEffect(() => {
         if (status === "loading") {
@@ -104,25 +120,90 @@ function Page() {
                         <h1>Cybernauts</h1>
                     {bots.map((bot : string) => (
                         <button className='btn btn-ghost'
-                        onClick={() => setConvoBot(bot)}
+                        onClick={() => selectedBot(bot)}
                         >{bot}</button>
                     ))}
                     </div>
-          
+        
                 </section>
                 {/* Main Content */}
                 <section className="w-3/4 h-screen">
-                    <div className="w-full flex flex-col">
-                        <p className="p-10 text-lg">{response}</p>
+                    <div className="w-full flex flex-col h-fit overflow-scroll py-20 px-5">
+                        {/* Chat History */}
+                        {chatHistory.map((chat:any) => (
+                            <>
+                            {/* User Response */}
+                            <div className="chat chat-end">
+                            <div className="chat-image avatar">
+                                <div className="w-10 rounded-full">
+                                <img
+                                    alt="Tailwind CSS chat bubble component"
+                                    src= {session?.user?.image ?? ''} />
+                                </div>
+                            </div>
+                            <div className="chat-header">
+                                {session?.user?.name ?? ''}
+                            </div>
+                            <div className="chat-bubble w-1/2 max-w-fit chat-bubble-secondary">{chat.user}</div>
+                            </div>
+
+                            {/* Bot Response */}
+                            <div className="chat chat-start">
+                            <div className="chat-image avatar">
+                                <div className="w-10 rounded-full">
+                                <img
+                                    alt="Tailwind CSS chat bubble component"
+                                    src="profile.png" />
+                                </div>
+                            </div>
+                            <div className="chat-header">
+                                {convoBot}
+                            </div>
+                            <div className="chat-bubble w-1/2 max-w-fit">{chat.bot}</div>
+                            </div>
+                        </>
+                        ))}
+                        
+                        {/* Current Chat */}
+                        {/* User Response */}
+                        <div className="chat chat-end">
+                            <div className="chat-image avatar">
+                                <div className="w-10 rounded-full">
+                                <img
+                                    alt="Tailwind CSS chat bubble component"
+                                    src= {session?.user?.image ?? ''} />
+                                </div>
+                            </div>
+                            <div className="chat-header">
+                                {session?.user?.name ?? ''}
+                            </div>
+                            <div className="chat-bubble w-1/2 max-w-fit chat-bubble-secondary">{}</div>
+                            </div>
+
+                            {/* Bot Response */}
+                            <div className="chat chat-start">
+                            <div className="chat-image avatar">
+                                <div className="w-10 rounded-full">
+                                <img
+                                    alt="Tailwind CSS chat bubble component"
+                                    src="profile.png" />
+                                </div>
+                            </div>
+                            <div className="chat-header">
+                                {convoBot}
+                            </div>
+                            <div className="chat-bubble w-1/2 max-w-fit">{}</div>
+                            </div>
+
                     </div>
 
                     {/* Input Section */}
-                    <div className="w-full flex flex-row items-center bottom-0 absolute my-5 gap-2 p-1">
+                    <div className="w-3/4 flex flex-row items-center bottom-0 fixed gap-2 p-2 bg-base-100">
                         <i className="fi fi-rr-clip text-2xl btn btn-ghost"></i>
                         <i className="fi fi-rr-smile text-2xl btn btn-ghost"></i>
                         <input
                             type="text"
-                            className="input input-md w-3/5 text-lg"
+                            className="input input-md w-5/6 text-lg"
                             value={inputValue}
                             onChange={handleInputChange}
                             onKeyDown={(e) => {

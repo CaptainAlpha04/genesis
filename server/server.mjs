@@ -115,7 +115,6 @@ async function ConverseWithBot(ActorBot, botName, message, userID) {
     const response = await ActorBot.callActorModel(message, userID, botName);
     await saveChatHistory(botName, userID, message, response);
     await ManageAdditionalInfo(botName, response);
-    console.log('Bot:', response);
     return response;
 }
 
@@ -144,7 +143,7 @@ async function saveChatHistory(botName, userID, userMessage, botResponse) {
 
 // Manages the additional information of the bot
 async function ManageAdditionalInfo(botName, response) {
-    const newInfo = (await ManagerModel(response)).trim();
+    const newInfo = (await ManagerModel(response || '')).trim();
     if (newInfo !== 'NNIP') {
         const botDocument = await bot.findOne({ 'personalInfo.Name': botName });
         if (botDocument) {
@@ -186,6 +185,22 @@ app.post('/conversation/:userID', async (req, res) => {
 
 app.get('/fetchBots', (req, res) => {
     res.send({ bots: Object.keys(bots) });
+})
+
+app.get('/fetchChatHistory/:userID/:botName', async (req, res) => {
+    const { userID, botName } = req.params;
+    const botDocument = await bot.findOne({ 'personalInfo.Name': botName });
+    if (botDocument) {
+        const userChatHistory = botDocument.ChatHistory.find(chat => chat.userID === userID);
+        if (userChatHistory) {
+            console.log(userChatHistory.chat)
+            res.send({ chatHistory: userChatHistory.chat });
+        } else {
+            res.send({ chatHistory: [] });
+        }
+    } else {
+        res.send({ chatHistory: [] });
+    }
 })
 
 // Start the server
