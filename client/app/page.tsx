@@ -3,25 +3,45 @@ import React, { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-async function fetchConvo(value: string) {
-    const response = await fetch("http://localhost:8000/convo", {
+
+async function fetchBots() {
+    const response = await fetch("http://localhost:8000/fetchBots");
+    const data = await response.json();
+    const bots = await data.bots
+    return bots
+}
+
+async function conversation(message: string, botName: string, userId: string, userName: string) {
+    
+    const payload = {userName, botName, message}
+    const response = await fetch(`http://localhost:8000/conversation/${userId}`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message: value }),
+        body: JSON.stringify(payload),
     });
 
     const data = await response.json();
-    const message = data.message;
-    return message;
+    const answer = await data.answer
+    return answer;
 }
 
 function Page() {
+    const [bots, setBots] = useState([]);
+    const [convoBot, setConvoBot] = useState("");
     const [inputValue, setInputValue] = useState("");
     const [response, setResponse] = useState("");
     const { data: session, status } = useSession();
     const router = useRouter();
+
+    useEffect(() => {
+        const fetchData = async () => {
+            const data = await fetchBots();
+            setBots(data);
+        };
+        fetchData();
+    }, []);
 
     useEffect(() => {
         if (status === "loading") {
@@ -46,7 +66,7 @@ function Page() {
     const handleSubmit = async (): Promise<void> => {
         const messageToSend = inputValue;
         setInputValue("");
-        const message = await fetchConvo(messageToSend);
+        const message = await conversation(messageToSend, convoBot, session?.user?.id ?? '', session?.user?.name ?? '');
         setResponse(message);
     };
 
@@ -78,6 +98,16 @@ function Page() {
                     >
                         Chat
                     </button>
+
+                    {/* Bot List */}
+                    <div className='flex flex-col gap-1'>
+                        <h1>Cybernauts</h1>
+                    {bots.map((bot : string) => (
+                        <button className='btn btn-ghost'
+                        onClick={() => setConvoBot(bot)}
+                        >{bot}</button>
+                    ))}
+                    </div>
           
                 </section>
                 {/* Main Content */}
@@ -87,7 +117,7 @@ function Page() {
                     </div>
 
                     {/* Input Section */}
-                    <div className="w-full flex flex-row items-center bottom-0 absolute my-5 gap-2 mx-10">
+                    <div className="w-full flex flex-row items-center bottom-0 absolute my-5 gap-2 p-1">
                         <i className="fi fi-rr-clip text-2xl btn btn-ghost"></i>
                         <i className="fi fi-rr-smile text-2xl btn btn-ghost"></i>
                         <input

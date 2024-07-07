@@ -44,7 +44,7 @@ class ActorModel {
                 generationConfig: {
                     responseMimeType: 'application/json',
                 }
-            });
+            })
         }
 
         const prompt = chatMessage || `"Starts the conversation"`;
@@ -53,7 +53,10 @@ class ActorModel {
             const result = await this.retryWithBackoff(async () => {
                 return await this.chat.sendMessage(prompt);
             });
-            return result.response.text();
+            
+            const response = result.response.text();
+            console.log('Response:', response);
+            return JSON.parse(response).message
         } catch (error) {
             console.error('Failed to get response:', error);
             return '';

@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import bot from './model/botSchema.mjs';
+import objectAssign from 'object-assign';
 dotenv.config();
 
 // Middlewares
@@ -168,20 +169,24 @@ app.get('/', (req, res) => {
 // global variables to keep track of the conversation
 let ConnectBot = false;
 let ActorBot;
-
 // Conversation with bot based on UserID
 app.post('/conversation/:userID', async (req, res) => {
     const userID = req.params.userID;
     let response = '';
     const { message, botName } = req.body;
+    console.log('Message:', message, 'Bot:', botName, 'UserID:', userID);
     if (ConnectBot) {
         response = await ConverseWithBot(ActorBot, botName, message || '', userID);
     } else {
         [ActorBot, response] = await startConversationWithBot(req.body, userID);
         ConnectBot = true;
     }
-    res.send({ message: `${response || "Conversation started"}` });
+    res.send({ answer: `${response || "Conversation started"}` });
 });
+
+app.get('/fetchBots', (req, res) => {
+    res.send({ bots: Object.keys(bots) });
+})
 
 // Start the server
 app.listen(PORT, () => {
