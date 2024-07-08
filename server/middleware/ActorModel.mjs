@@ -54,7 +54,11 @@ class ActorModel {
                 return await this.chat.sendMessage(prompt);
             });
             
-            return result.response.text();
+            const response = result.response.text();
+            const parsedReply = JSON.parse(response);
+            const firstKey = Object.keys(parsedReply)[0];
+            return parsedReply[firstKey];
+
         } catch (error) {
             console.error('Failed to get response:', error);
             return '';

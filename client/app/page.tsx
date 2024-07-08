@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -40,6 +40,7 @@ function Page() {
     const [bots, setBots] = useState([]);
     const [convoBot, setConvoBot] = useState("");
     const [inputValue, setInputValue] = useState("");
+    const [messages, setMessages] = useState<{ sender: string; text: string; }[]>([]);
     const [response, setResponse] = useState("");
     const [chatHistory, setChatHistory] = useState([]);
     const { data: session, status } = useSession();
@@ -58,6 +59,15 @@ function Page() {
         fetchData();
     }, []);
     
+    const messageEndRef = useRef(null);
+
+    const scrollToBottom = () => {
+        (messageEndRef.current as unknown as HTMLElement)?.scrollIntoView({ behavior: "smooth" });
+    }
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages, chatHistory]);
 
     useEffect(() => {
         if (status === "loading") {
@@ -82,8 +92,12 @@ function Page() {
     const handleSubmit = async (): Promise<void> => {
         const messageToSend = inputValue;
         setInputValue("");
+        const userMessage = {sender: "user", text: messageToSend};
+        setMessages((prevMessages) => [...prevMessages, userMessage]);
         const message = await conversation(messageToSend, convoBot, session?.user?.id ?? '', session?.user?.name ?? '');
         setResponse(message);
+        const botMessage = {sender: "bot", text: message};
+        setMessages((prevMessages) => [...prevMessages, botMessage]);
     };
 
     if (status === "loading") {
@@ -119,7 +133,7 @@ function Page() {
                     <div className='flex flex-col gap-1'>
                         <h1>Cybernauts</h1>
                     {bots.map((bot : string) => (
-                        <button className='btn btn-ghost'
+                        <button className={(convoBot === bot ? "btn btn-primary" : "btn btn-ghost")}
                         onClick={() => selectedBot(bot)}
                         >{bot}</button>
                     ))}
@@ -128,7 +142,7 @@ function Page() {
                 </section>
                 {/* Main Content */}
                 <section className="w-3/4 h-screen">
-                    <div className="w-full flex flex-col h-fit overflow-scroll py-20 px-5">
+                    <div className="w-full flex flex-col h-screen overflow-auto py-20 px-5 ">
                         {/* Chat History */}
                         {chatHistory.map((chat:any) => (
                             <>
@@ -166,35 +180,20 @@ function Page() {
                         
                         {/* Current Chat */}
                         {/* User Response */}
-                        <div className="chat chat-end">
-                            <div className="chat-image avatar">
+                        {messages.map((message, index) => (
+                            <div key={index} className={`chat ${message.sender === "user" ? "chat-end" : "chat-start"}`}>
+                                <div className="chat-image avatar">
                                 <div className="w-10 rounded-full">
-                                <img
-                                    alt="Tailwind CSS chat bubble component"
-                                    src= {session?.user?.image ?? ''} />
+                                    <img alt="avatar" src={message.sender === "user" ? session?.user?.image ?? "" : "profile.png"} />
+                                </div>
+                                </div>
+                                <div className="chat-header">{message.sender === "user" ? session?.user?.name ?? "" : convoBot}</div>
+                                <div className={`chat-bubble w-1/2 max-w-fit ${message.sender === "user" ? "chat-bubble-secondary" : ""}`}>
+                                {message.text}
                                 </div>
                             </div>
-                            <div className="chat-header">
-                                {session?.user?.name ?? ''}
-                            </div>
-                            <div className="chat-bubble w-1/2 max-w-fit chat-bubble-secondary">{}</div>
-                            </div>
-
-                            {/* Bot Response */}
-                            <div className="chat chat-start">
-                            <div className="chat-image avatar">
-                                <div className="w-10 rounded-full">
-                                <img
-                                    alt="Tailwind CSS chat bubble component"
-                                    src="profile.png" />
-                                </div>
-                            </div>
-                            <div className="chat-header">
-                                {convoBot}
-                            </div>
-                            <div className="chat-bubble w-1/2 max-w-fit">{}</div>
-                            </div>
-
+                        ))}
+                        <div ref={messageEndRef}></div>
                     </div>
 
                     {/* Input Section */}
