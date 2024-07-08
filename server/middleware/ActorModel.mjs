@@ -55,6 +55,7 @@ class ActorModel {
             });
             
             const response = result.response.text();
+            console.log(response)
             const parsedReply = JSON.parse(response);
             const firstKey = Object.keys(parsedReply)[0];
             return parsedReply[firstKey];

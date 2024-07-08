@@ -6,7 +6,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import bot from './model/botSchema.mjs';
-import objectAssign from 'object-assign';
+import { generateImagesLinks } from 'bimg';
 dotenv.config();
 
 // Middlewares
@@ -25,10 +25,12 @@ async function GenerateModel(prompt) {
     try {
         const model = await GeneratorModel(prompt || 'Generate a persona');
         if (model) {
+            const DP = await generateImage(model.Gender, model.Ethnicity, model.Looks);
             const newBot = new bot({
                 personalInfo: {
                     Name: model.Name,
                     Age: model.Age,
+                    Gender: model.Gender,
                     Ethnicity: model.Ethnicity,
                     Education: model.Education,
                     Profession: model.Profession,
@@ -41,7 +43,8 @@ async function GenerateModel(prompt) {
                     Nationality: model.Nationality,
                     Personality: model.Personality,
                     Good_Traits: model.Good_Traits,
-                    Bad_Traits: model.Bad_Traits
+                    Bad_Traits: model.Bad_Traits,
+                    picture: DP,
                 }
             });
 
@@ -55,9 +58,22 @@ async function GenerateModel(prompt) {
     }
 }
 
-//await GenerateModel('Generate a caucasian male');
-//await GenerateModel('Generate a palestinian woman');
-//await GenerateModel('Generate a Asian American male');
+// await GenerateModel('Generate a caucasian male');
+// await GenerateModel('Generate a palestinian woman');
+// await GenerateModel('Generate a Asian American male');
+
+// Generating a image for a bot
+async function generateImage(gender, ethnicity, looks) {
+    try {
+        const prompt = `photorealistic profile picture of a beautiful ${ethnicity} ${gender}, and looks as ${looks}. Looking in the camera, normal background.`;
+        const imageLinks = await generateImagesLinks(prompt);
+        console.log(imageLinks);
+        return imageLinks[1];
+        } catch (err) {
+        console.trace(err);
+        return null;
+    }
+}
 
 // Simulation of a conversation between two bots
 async function simulation() {
@@ -184,8 +200,16 @@ app.post('/conversation/:userID', async (req, res) => {
 });
 
 app.get('/fetchBots', (req, res) => {
-    res.send({ bots: Object.keys(bots) });
-})
+    const botsData = Object.keys(bots).map(key => {
+        const bot = bots[key];
+        const DP = bot.persona && bot.persona.picture ? bot.persona.picture : null;
+        return {
+            name: key,
+            DP: DP
+        };
+    });
+    res.send({ bots: botsData });
+});
 
 app.get('/fetchChatHistory/:userID/:botName', async (req, res) => {
     const { userID, botName } = req.params;
