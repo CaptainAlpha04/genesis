@@ -5,10 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 async function fetchBots() {
-    const response = await fetch("http://localhost:8000/fetchBots");
-    const data = await response.json();
-    console.log(data.bots.DP)
-    return data.bots;
+    try {
+        const response = await fetch("http://localhost:8000/fetchBots");
+        const data = await response.json();
+        console.log(data.bots.DP)
+        return data.bots;    
+    } catch (error) {
+        console.error("Error fetching bots", error);
+    }
 }
 
 async function conversation(message: string, botName: string, userId: string, userName: string) {
@@ -93,10 +97,21 @@ function Page() {
     const handleSubmit = async (): Promise<void> => {
         const messageToSend = inputValue;
         setInputValue("");
+        const btn = document.getElementById("submitBtn") as HTMLButtonElement;
+        const inputField = document.getElementById("input-field") as HTMLInputElement;
+        if (inputField) {
+            inputField.disabled = true;
+            btn.disabled = true;
+        }
         const userMessage = { sender: "user", text: messageToSend };
         setMessages((prevMessages) => [...prevMessages, userMessage]);
         const message = await conversation(messageToSend, convoBot.name, session?.user?.id ?? '', session?.user?.name ?? '');
         setResponse(message);
+
+        if(inputField) {
+            inputField.disabled = false;
+            btn.disabled = false;
+        }
         const botMessage = { sender: convoBot.name, text: message };
         setMessages((prevMessages) => [...prevMessages, botMessage]);
     };
@@ -104,7 +119,7 @@ function Page() {
     if (status === "loading") {
         return (
             <div className="flex justify-center items-center min-h-screen">
-                <div className="border-t-4 border-gray-500 rounded-full animate-spin h-14 w-14"></div>
+                <div className="border-t-4 border-primary rounded-full animate-spin h-14 w-14"></div>
             </div>
         );
         // Or a spinner/loading component
@@ -113,9 +128,9 @@ function Page() {
     return (
         <>
             {/* Top Level Screen View */}
-            <section className="h-screen flex flex-row">
+            <section className="h-screen flex flex-row font-poppins">
                 {/* Side Bar */}
-                <section className="w-1/4 h-screen bg-base-200">
+                <section className="w-1/4 h-screen">
                     {/* Sign Out Button */}
                     <button
                         onClick={() => signOut()}
@@ -130,23 +145,76 @@ function Page() {
                         Chat
                     </button>
 
+                    <button className="btn btn-square">
+                    <label className="swap swap-rotate">
+                        {/* this hidden checkbox controls the state */}
+                        <input type="checkbox" className="theme-controller" value="dracula" />
+
+                        {/* sun icon */}
+                        <svg
+                            className="swap-off h-7 w-7 fill-current"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24">
+                            <path
+                            d="M5.64,17l-.71.71a1,1,0,0,0,0,1.41,1,1,0,0,0,1.41,0l.71-.71A1,1,0,0,0,5.64,17ZM5,12a1,1,0,0,0-1-1H3a1,1,0,0,0,0,2H4A1,1,0,0,0,5,12Zm7-7a1,1,0,0,0,1-1V3a1,1,0,0,0-2,0V4A1,1,0,0,0,12,5ZM5.64,7.05a1,1,0,0,0,.7.29,1,1,0,0,0,.71-.29,1,1,0,0,0,0-1.41l-.71-.71A1,1,0,0,0,4.93,6.34Zm12,.29a1,1,0,0,0,.7-.29l.71-.71a1,1,0,1,0-1.41-1.41L17,5.64a1,1,0,0,0,0,1.41A1,1,0,0,0,17.66,7.34ZM21,11H20a1,1,0,0,0,0,2h1a1,1,0,0,0,0-2Zm-9,8a1,1,0,0,0-1,1v1a1,1,0,0,0,2,0V20A1,1,0,0,0,12,19ZM18.36,17A1,1,0,0,0,17,18.36l.71.71a1,1,0,0,0,1.41,0,1,1,0,0,0,0-1.41ZM12,6.5A5.5,5.5,0,1,0,17.5,12,5.51,5.51,0,0,0,12,6.5Zm0,9A3.5,3.5,0,1,1,15.5,12,3.5,3.5,0,0,1,12,15.5Z" />
+                        </svg>
+
+                        {/* moon icon */}
+                        <svg
+                            className="swap-on h-7 w-7 fill-current"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24">
+                            <path
+                            d="M21.64,13a1,1,0,0,0-1.05-.14,8.05,8.05,0,0,1-3.37.73A8.15,8.15,0,0,1,9.08,5.49a8.59,8.59,0,0,1,.25-2A1,1,0,0,0,8,2.36,10.14,10.14,0,1,0,22,14.05,1,1,0,0,0,21.64,13Zm-9.5,6.69A8.14,8.14,0,0,1,7.08,5.22v.27A10.15,10.15,0,0,0,17.22,15.63a9.79,9.79,0,0,0,2.1-.22A8.11,8.11,0,0,1,12.14,19.73Z" />
+                        </svg>
+                        </label>
+                    </button>
+
                     {/* Bot List */}
-                    <div className='flex flex-col gap-1'>
-                        <h1 className="text-balance font-medium text-xl p-5">Cybernauts</h1>
+                    <div className='flex flex-col gap-1 bg-base-200 rounded-xl'>
+                        <h1 className="text-balance font-bold text-xl p-3">Cybernauts</h1>
                         {bots.map((bot: any) => (
-                            <button
+                            <div
                                 key={bot.name}
-                                className={(convoBot.name === bot.name ? "btn btn-primary" : "btn btn-ghost")}
+                                className={"p-3 flex flex-row align-middle cursor-pointer hover:bg-base-300 text-base-content rounded-xl " + (convoBot.name === bot.name ? " bg-base-300" : "")}
                                 onClick={() => selectedBot(bot)}
                             >
                                 <img src={bot.DP || 'profile.png'} alt="Bot Avatar" className="w-10 h-10 rounded-full mr-2" />
-                                {bot.name}
-                            </button>
+                                <div className="flex flex-col">
+                                    <h1 className="font-medium">{bot.name}</h1>
+                                    <p className="font-light text-xs">{bot.profession}</p>
+                                </div>
+                            </div>
                         ))}
                     </div>
+
+                    {/* Sapiens List */}
+                    <div className='flex flex-col gap-1 bg-base-200 rounded-xl mt-5'>
+                        <h1 className="text-balance font-bold text-xl p-3">Sapiens</h1>
+                        {/* {bots.map((bot: any) => (
+                            <div
+                                key={bot.name}
+                                className={"p-3 flex flex-row align-middle cursor-pointer hover:bg-base-300 text-base-content rounded-xl " + (convoBot.name === bot.name ? " bg-base-300" : "")}
+                                onClick={() => selectedBot(bot)}
+                            >
+                                <img src={bot.DP || 'profile.png'} alt="Bot Avatar" className="w-10 h-10 rounded-full mr-2" />
+                                <div className="flex flex-col">
+                                    <h1 className="font-medium">{bot.name}</h1>
+                                    <p className="font-light text-xs">{bot.profession}</p>
+                                </div>
+                            </div>
+                        ))} */}
+                    </div>
+
                 </section>
                 {/* Main Content */}
-                <section className="w-3/4 h-screen">
+                {convoBot === "" ? (
+                    <div></div>
+                )
+
+                : (
+
+                    <section className="w-3/4 h-screen">
                     <div className="w-full flex flex-col h-screen overflow-auto py-20 px-5">
                         {/* Chat History */}
                         {chatHistory.map((chat: any, index: number) => (
@@ -158,7 +226,7 @@ function Page() {
                                             <img
                                                 alt="User Avatar"
                                                 src={session?.user?.image ?? ''}
-                                            />
+                                                />
                                         </div>
                                     </div>
                                     <div className="chat-header">
@@ -174,7 +242,7 @@ function Page() {
                                             <img
                                                 alt="Bot Avatar"
                                                 src={convoBot?.DP ?? ''}
-                                            />
+                                                />
                                         </div>
                                     </div>
                                     <div className="chat-header">
@@ -208,6 +276,7 @@ function Page() {
                         <i className="fi fi-rr-smile text-2xl btn btn-ghost"></i>
                         <input
                             type="text"
+                            id = "input-field"
                             className="input input-md w-5/6 text-lg"
                             value={inputValue}
                             onChange={handleInputChange}
@@ -215,15 +284,17 @@ function Page() {
                                 e.key === "Enter" && handleSubmit();
                             }}
                             placeholder="Enter your message"
-                        />
+                            />
                         <button
                             onClick={handleSubmit}
+                            id = "submitBtn"
                             className="btn btn-primary"
-                        >
+                            >
                             <i className="fi fi-rr-paper-plane-top font-bold"></i>
                         </button>
                     </div>
                 </section>
+        )}
             </section>
         </>
     );

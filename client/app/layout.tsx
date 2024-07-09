@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Josefin_Sans, Poppins} from "next/font/google";
 import "./globals.css";
 import SessionWrapper from "./components/SessionWrapper";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const josefin_sans = Josefin_Sans({ subsets: ["latin"], variable: "--font-josefin" });
+const poppins = Poppins({ subsets: ["latin"], variable: "--font-poppins", weight: ['100','200','300','400', '500', '600', '700', '800', '900']});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -17,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${josefin_sans.variable} ${inter.variable} ${poppins.variable}`} theme-data="fantasy">
         <SessionWrapper>{children}
         </SessionWrapper>
         </body>

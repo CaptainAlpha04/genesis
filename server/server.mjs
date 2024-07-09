@@ -25,7 +25,7 @@ async function GenerateModel(prompt) {
     try {
         const model = await GeneratorModel(prompt || 'Generate a persona');
         if (model) {
-            const DP = await generateImage(model.Gender, model.Ethnicity, model.Looks);
+            const DP = await generateImage(model.age, model.Gender, model.Ethnicity, model.Looks);
             const newBot = new bot({
                 personalInfo: {
                     Name: model.Name,
@@ -63,12 +63,12 @@ async function GenerateModel(prompt) {
 // await GenerateModel('Generate a Asian American male');
 
 // Generating a image for a bot
-async function generateImage(gender, ethnicity, looks) {
+async function generateImage(age, gender, ethnicity, looks) {
     try {
-        const prompt = `photorealistic profile picture of a beautiful ${ethnicity} ${gender}, and looks as ${looks}. Looking in the camera, normal background.`;
+        const prompt = `photorealistic profile picture of a ${age} year old beautiful ${ethnicity} ${gender}, and looks as ${looks}. Looking in the camera, normal background.`;
         const imageLinks = await generateImagesLinks(prompt);
         console.log(imageLinks);
-        return imageLinks[1];
+        return imageLinks[Math.random() >= 0.5 ? 1 : 4];
         } catch (err) {
         console.trace(err);
         return null;
@@ -99,6 +99,7 @@ async function simulation() {
 
 // Load all the bots from the database
 let bots = {};
+let activeBots = {};
 // Activates the bots
 async function loadBots() {
     const botDocuments = await bot.find();
@@ -106,6 +107,7 @@ async function loadBots() {
         for (const botDocument of botDocuments) {
             const ActorBot = new ActorModel(botDocument.personalInfo);
             bots[botDocument.personalInfo.Name] = ActorBot;
+            activeBots[botDocument.personalInfo.Name] = ActorBot;
             console.log(botDocument.personalInfo.Name + ' is Online...');
         }
     }
@@ -118,7 +120,7 @@ async function startConversationWithBot(reqBody, userID) {
     if (ActorBot) {
         console.log('Conversation between ' + userName + " with ID " + userID + ' and ' + botName);
         const response = await ConverseWithBot(ActorBot, botName, message, userID);
-        delete bots[botName];
+        delete activeBots[botName];
         return [ActorBot, response];
     } else {
         console.log('Bot not found');
@@ -203,9 +205,11 @@ app.get('/fetchBots', (req, res) => {
     const botsData = Object.keys(bots).map(key => {
         const bot = bots[key];
         const DP = bot.persona && bot.persona.picture ? bot.persona.picture : null;
+        const Profession = bot.persona && bot.persona.Profession ? bot.persona.Profession : null;
         return {
             name: key,
-            DP: DP
+            profession: Profession,
+            DP: DP,
         };
     });
     res.send({ bots: botsData });
