@@ -30,7 +30,9 @@ const botSchema = new mongoose.Schema({
                 { user: String, bot: String }
             ]
         }
-    ]
+    ],
+    currentUser: { type: String, default: null },
+
 });
 
 const bot = mongoose.model('Bot', botSchema);

@@ -16,7 +16,7 @@ app.use(express.json());
 app.use(cors());
 
 // Connecting to MongoDB database
-mongoose.connect('mongodb://localhost:27017')
+mongoose.connect(process.env.MONGODB_URI)
     .then(() => { console.log('Connected to MongoDB'); })
     .catch((err) => console.log(err));
 
@@ -98,38 +98,23 @@ async function simulation() {
 }
 
 // Load all the bots from the database
-let bots = {};
-let activeBots = {};
+let allBots = {};
 // Activates the bots
 async function loadBots() {
     const botDocuments = await bot.find();
     if (botDocuments) {
         for (const botDocument of botDocuments) {
             const ActorBot = new ActorModel(botDocument.personalInfo);
-            bots[botDocument.personalInfo.Name] = ActorBot;
-            activeBots[botDocument.personalInfo.Name] = ActorBot;
+            allBots[botDocument.personalInfo.Name] = ActorBot;
+            allBots[botDocument.personalInfo.Name] = ActorBot;
             console.log(botDocument.personalInfo.Name + ' is Online...');
         }
     }
 }
 
-// Starts a conversation with a bot
-async function startConversationWithBot(reqBody, userID) {
-    const { userName, botName, message } = reqBody;
-    const ActorBot = bots[botName];
-    if (ActorBot) {
-        console.log('Conversation between ' + userName + " with ID " + userID + ' and ' + botName);
-        const response = await ConverseWithBot(ActorBot, botName, message, userID);
-        delete activeBots[botName];
-        return [ActorBot, response];
-    } else {
-        console.log('Bot not found');
-        return [];
-    }
-}
-
 // Method to communicate with the bot and update the database
 async function ConverseWithBot(ActorBot, botName, message, userID) {
+
     const response = await ActorBot.callActorModel(message, userID, botName);
     await saveChatHistory(botName, userID, message, response);
     await ManageAdditionalInfo(botName, response);
@@ -174,6 +159,17 @@ async function ManageAdditionalInfo(botName, response) {
     }
 }
 
+async function botAvailability(botName, userID) {
+    const botDocument = await bot.findOne({ 'personalInfo.Name': botName }); 
+    if (botDocument) {
+        if (botDocument.currentUser === userID || botDocument.currentUser === null) {
+            return true
+        } else {
+            return false
+        }
+    }
+}
+
 // Function Call to load the bots
 await loadBots();
 
@@ -183,27 +179,29 @@ app.get('/', (req, res) => {
     res.send({ message: 'Simulation started' });
 });
 
-// global variables to keep track of the conversation
-let ConnectBot = false;
-let ActorBot;
 // Conversation with bot based on UserID
 app.post('/conversation/:userID', async (req, res) => {
     const userID = req.params.userID;
     let response = '';
     const { message, botName } = req.body;
     console.log('Message:', message, 'Bot:', botName, 'UserID:', userID);
-    if (ConnectBot) {
-        response = await ConverseWithBot(ActorBot, botName, message || '', userID);
-    } else {
-        [ActorBot, response] = await startConversationWithBot(req.body, userID);
-        ConnectBot = true;
-    }
-    res.send({ answer: `${response || "Conversation started"}` });
+    
+    const botDocument = await bot.findOne({ 'personalInfo.Name': botName }); 
+        if (botDocument.currentUser === userID) {
+            response = await ConverseWithBot(allBots[botName], botName, message, userID);
+        } else if(botDocument.currentUser === null) {
+                botDocument.currentUser = userID;
+                await botDocument.save();
+                response = await ConverseWithBot(allBots[botName], botName, message, userID);
+        } else {
+            response = 'Bot is currently busy. Please try again later.';
+        }
+    res.send({ response: response });
 });
 
 app.get('/fetchBots', (req, res) => {
-    const botsData = Object.keys(bots).map(key => {
-        const bot = bots[key];
+    const botsData = Object.keys(allBots).map(key => {
+        const bot = allBots[key];
         const DP = bot.persona && bot.persona.picture ? bot.persona.picture : null;
         const Profession = bot.persona && bot.persona.Profession ? bot.persona.Profession : null;
         return {
@@ -214,6 +212,12 @@ app.get('/fetchBots', (req, res) => {
     });
     res.send({ bots: botsData });
 });
+
+app.get('/checkBotAvailability/:userID/:botName', async (req, res) => {
+    const { botName, userID } = req.params;
+    const isBotAvailable = await botAvailability(botName, userID);
+    res.send({ available: isBotAvailable });
+})
 
 app.get('/fetchChatHistory/:userID/:botName', async (req, res) => {
     const { userID, botName } = req.params;
@@ -229,6 +233,17 @@ app.get('/fetchChatHistory/:userID/:botName', async (req, res) => {
     } else {
         res.send({ chatHistory: [] });
     }
+})
+
+app.get('/endConversation/:userID/:botName', async (req, res) => {
+    const { userID, botName } = req.params;
+    const botDocument = await bot.findOne({ 'personalInfo.Name': botName }); 
+    if (botDocument) {
+        botDocument.currentUser = null;
+        await botDocument.save();
+    }
+    console.log('Conversation ended between ', botName, ' and ', userID);
+    res.send({ message: 'Conversation ended' });
 })
 
 // Start the server
