@@ -58,6 +58,7 @@ async function GenerateModel(prompt) {
     }
 }
 
+// await GenerateModel('Generate an Indian woman');
 // await GenerateModel('Generate a caucasian male');
 // await GenerateModel('Generate a palestinian woman');
 // await GenerateModel('Generate a Asian American male');
@@ -95,6 +96,19 @@ async function simulation() {
         responseB = await ActorB.callActorModel(responseA);
         console.log('PersonB:', responseB);
     }
+}
+
+// shutdowns the server gracefully
+function shutdown() {
+    console.log('Shutting down server...');
+    // Set all bots to inactive
+    bot.updateMany({}, { $set: { currentUser: null } }, (err) => {
+        if (err) console.error('Error setting bots to inactive:', err);
+        mongoose.connection.close(() => {
+            console.log('Database connection closed.');
+            process.exit(0);
+        });
+    });
 }
 
 // Load all the bots from the database
@@ -245,6 +259,11 @@ app.get('/endConversation/:userID/:botName', async (req, res) => {
     console.log('Conversation ended between ', botName, ' and ', userID);
     res.send({ message: 'Conversation ended' });
 })
+
+process.on('SIGTERM',shutdown);
+process.on('SIGINT',shutdown);
+
+
 
 // Start the server
 app.listen(PORT, () => {
