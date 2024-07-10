@@ -13,7 +13,7 @@ const safetySettings = [
 class ActorModel {
     constructor(persona) {
         this.persona = persona;
-        this.ActorSystemInstructs = `You are ${persona} + ${process.env.ACTOR_SYSTEM_INSTRUCTS}`; 
+        this.ActorSystemInstructs = `You are ${persona} + ${process.env.ACTOR_SYSTEM_INSTRUCTS} + ${persona.additionalInfo}`; 
         this.chat = null;
     }
 
