@@ -390,13 +390,6 @@ function Page() {
                         {bots.map((bot: any) => (
                             <div
                                 key={bot.name}
-                                className={
-                                    "p-3 flex flex-row align-middle cursor-pointer hover:bg-base-300 text-base-content rounded-xl " +
-                                    (convoBot.name === bot.name
-                                        ? " bg-base-300"
-                                        : "")
-                                }
-                            key={bot.name}
                                 className={"p-3 flex flex-row align-middle cursor-pointer hover:bg-base-300 text-base-content rounded-xl " + (convoBot.name === bot.name ? " bg-base-300" : "")}
                                 onClick={() => selectedBot(bot)}
                             >
