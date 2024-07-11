@@ -155,35 +155,26 @@ function Page() {
     return (
         <>
             {/* Top Level Screen View */}
-            <section className="h-screen flex flex-row font-poppins">
+            <section className="h-screen flex flex-row font-poppins text-base-content">
+
                 {/* Side Bar */}
                 <section className="w-1/4 h-screen">
-                    {/* Sign Out Button */}
-                    <button
-                        onClick={() => signOut()}
-                        className="btn btn-danger m-4"
-                    >
-                        Sign Out
-                    </button>
-                    <button
-                        className="btn btn-primary m-4"
-                        onClick={handleChatClick}
-                    >
-                        Chat
-                    </button>
-
-                    {/* Theme Switch */}
-                    <ThemeSwitch />
-
+                
+                <div className="p-3 flex flex-row gap-1 justify-between">
+                <h1 className="text-3xl font-bold">Genesis</h1>
+                <img src={session?.user.image?? 'profile.png'} alt="User"  className="rounded-full h-10 w-10 cursor-pointer hover:shadow-xl shadow-black" onClick={() => setConvoBot('')}/>
+                </div>
+                <input type="text" placeholder="Search..." 
+                className="input input-md my-4 mx-4 w-11/12 bg-base-300" />
                     {/* Bot List */}
                     <div className='flex flex-col gap-1 bg-base-200 rounded-xl'>
                         <h1 className="text-balance font-bold text-xl p-3">Cybernauts</h1>
                         {bots.map((bot: any) => (
                             <div
-                                key={bot.name}
+                            key={bot.name}
                                 className={"p-3 flex flex-row align-middle cursor-pointer hover:bg-base-300 text-base-content rounded-xl " + (convoBot.name === bot.name ? " bg-base-300" : "")}
                                 onClick={() => selectedBot(bot)}
-                            >
+                                >
                                 <img src={bot.DP || 'profile.png'} alt="Bot Avatar" className="w-10 h-10 rounded-full mr-2" />
                                 <div className="flex flex-col">
                                     <h1 className="font-medium">{bot.name}</h1>
@@ -198,28 +189,47 @@ function Page() {
                         <h1 className="text-balance font-bold text-xl p-3">Sapiens</h1>
                         {/* {bots.map((bot: any) => (
                             <div
-                                key={bot.name}
-                                className={"p-3 flex flex-row align-middle cursor-pointer hover:bg-base-300 text-base-content rounded-xl " + (convoBot.name === bot.name ? " bg-base-300" : "")}
-                                onClick={() => selectedBot(bot)}
+                            key={bot.name}
+                            className={"p-3 flex flex-row align-middle cursor-pointer hover:bg-base-300 text-base-content rounded-xl " + (convoBot.name === bot.name ? " bg-base-300" : "")}
+                            onClick={() => selectedBot(bot)}
                             >
-                                <img src={bot.DP || 'profile.png'} alt="Bot Avatar" className="w-10 h-10 rounded-full mr-2" />
-                                <div className="flex flex-col">
-                                    <h1 className="font-medium">{bot.name}</h1>
-                                    <p className="font-light text-xs">{bot.profession}</p>
-                                </div>
+                            <img src={bot.DP || 'profile.png'} alt="Bot Avatar" className="w-10 h-10 rounded-full mr-2" />
+                            <div className="flex flex-col">
+                            <h1 className="font-medium">{bot.name}</h1>
+                            <p className="font-light text-xs">{bot.profession}</p>
                             </div>
-                        ))} */}
+                            </div>
+                            ))} */}
                     </div>
+                    <ThemeSwitch />
 
+                    
                 </section>
                 {/* Main Content */}
                 {convoBot === "" ? (
-                    <div></div>
+                    <>
+                    {/* Sign Out Button */}
+                    <button
+                        onClick={() => signOut()}
+                        className="btn btn-danger m-4"
+                        >
+                        Sign Out
+                        </button>
+
+                    {/* Chat Button */}
+                        <button
+                        className="btn btn-primary m-4"
+                        onClick={handleChatClick}
+                        >
+                        Chat
+                        </button>
+                    {/* Theme Switch */}
+                    </>
                 )
-
+                
                 : (
-
-                <section className="w-3/4 h-screen">
+                    
+                    <section className="w-3/4 h-screen">
                     <div className="flex flex-row fixed top-0 w-full bg-base-100 z-10">
                         <div className="flex flex-row items-center gap-2 p-3">
                             <img
