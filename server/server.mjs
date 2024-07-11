@@ -30,7 +30,7 @@ async function GenerateModel(prompt) {
                 personalInfo: {
                     Name: model.Name,
                     Age: model.Age,
-                    Gender: model.Gender,   
+                    Gender: model.Gender,      
                     Ethnicity: model.Ethnicity,
                     Education: model.Education,
                     Profession: model.Profession,

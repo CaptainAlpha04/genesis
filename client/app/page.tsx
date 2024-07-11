@@ -371,26 +371,17 @@ function Page() {
     return (
         <>
             {/* Top Level Screen View */}
-            <section className="h-screen flex flex-row font-poppins">
+            <section className="h-screen flex flex-row font-poppins text-base-content">
+
                 {/* Side Bar */}
                 <section className="w-1/4 h-screen">
-                    {/* Sign Out Button */}
-                    <button
-                        onClick={() => signOut()}
-                        className="btn btn-danger m-4"
-                    >
-                        Sign Out
-                    </button>
-                    <button
-                        className="btn btn-primary m-4"
-                        onClick={handleChatClick}
-                    >
-                        Chat
-                    </button>
-
-                    {/* Theme Switch */}
-                    <ThemeSwitch />
-
+                
+                <div className="p-3 flex flex-row gap-1 justify-between">
+                <h1 className="text-3xl font-bold">Genesis</h1>
+                <img src={session?.user.image?? 'profile.png'} alt="User"  className="rounded-full h-10 w-10 cursor-pointer hover:shadow-xl shadow-black" onClick={() => setConvoBot('')}/>
+                </div>
+                <input type="text" placeholder="Search..." 
+                className="input input-md my-4 mx-4 w-11/12 bg-base-300" />
                     {/* Bot List */}
                     <div className="flex flex-col gap-1 bg-base-200 rounded-xl">
                         <h1 className="text-balance font-bold text-xl p-3">
@@ -405,6 +396,8 @@ function Page() {
                                         ? " bg-base-300"
                                         : "")
                                 }
+                            key={bot.name}
+                                className={"p-3 flex flex-row align-middle cursor-pointer hover:bg-base-300 text-base-content rounded-xl " + (convoBot.name === bot.name ? " bg-base-300" : "")}
                                 onClick={() => selectedBot(bot)}
                             >
                                 <img
