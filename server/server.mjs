@@ -1,12 +1,11 @@
 import express from 'express';
-import GeneratorModel from './middleware/GeneratorModel.mjs';
-import ActorModel from './middleware/ActorModel.mjs';
-import ManagerModel from './middleware/ManagerModel.mjs';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import bot from './model/botSchema.mjs';
-import { generateImagesLinks } from 'bimg';
+import { GenerateModel, shutdown, loadBots, allBots,
+ConverseWithBot, checkBotAvailability } from './controller/logic.mjs';
+
 dotenv.config();
 
 // Middlewares
@@ -20,170 +19,6 @@ mongoose.connect(process.env.MONGODB_URI)
     .then(() => { console.log('Connected to MongoDB'); })
     .catch((err) => console.log(err));
 
-// Generating a model for a bot
-async function GenerateModel(prompt) {
-    try {
-        const model = await GeneratorModel(prompt || 'Generate a persona');
-        if (model) {
-            const DP = await generateImage(model.age, model.Gender, model.Ethnicity, model.Looks);
-            const newBot = new bot({
-                personalInfo: {
-                    Name: model.Name,
-                    Age: model.Age,
-                    Gender: model.Gender,      
-                    Ethnicity: model.Ethnicity,
-                    Education: model.Education,
-                    Profession: model.Profession,
-                    SkillSet: model.SkillSet,
-                    Hobbies: model.Hobbies,
-                    Interests: model.Interests,
-                    Looks: model.Looks,
-                    Mood: model.Mood,
-                    Religion: model.Religion,
-                    Nationality: model.Nationality,
-                    Personality: model.Personality,
-                    Good_Traits: model.Good_Traits,
-                    Bad_Traits: model.Bad_Traits,
-                    picture: DP,
-                }
-            });
-
-            await newBot.save();
-            console.log('Data saved successfully:', newBot);
-        } else {
-            console.error('Model does not have the expected structure:', model);
-        }
-    } catch (error) {
-        console.log('Error generating model:', error);
-    }
-}
-
-// await GenerateModel('Generate an Indian woman');
-// await GenerateModel('Generate a caucasian male');
-// await GenerateModel('Generate a palestinian woman');
-// await GenerateModel('Generate a Asian American male');
-
-// Generating a image for a bot
-async function generateImage(age, gender, ethnicity, looks) {
-    try {
-        const prompt = `photorealistic profile picture of a ${age} year old beautiful ${ethnicity} ${gender}, and looks as ${looks}. Looking in the camera, normal background.`;
-        const imageLinks = await generateImagesLinks(prompt);
-        console.log(imageLinks);
-        return imageLinks[Math.random() >= 0.5 ? 1 : 4];
-        } catch (err) {
-        console.trace(err);
-        return null;
-    }
-}
-
-// Simulation of a conversation between two bots
-async function simulation() {
-    const personA = await GeneratorModel('Generate a persona');
-    const personB = await GeneratorModel('Generate a persona');
-    console.log(personA, personB);
-
-    // Initializing two actor models objects
-    const ActorA = new ActorModel(personA);
-    const ActorB = new ActorModel(personB);
-
-    let responseA = '';
-    let responseB = '';
-
-    console.log('Conversation between personA and personB');
-    while (true) {
-        responseA = await ActorA.callActorModel(responseB);
-        console.log('PersonA:', responseA);
-        responseB = await ActorB.callActorModel(responseA);
-        console.log('PersonB:', responseB);
-    }
-}
-
-// shutdowns the server gracefully
-function shutdown() {
-    console.log('Shutting down server...');
-    // Set all bots to inactive
-    bot.updateMany({}, { $set: { currentUser: null } }, (err) => {
-        if (err) console.error('Error setting bots to inactive:', err);
-        mongoose.connection.close(() => {
-            console.log('Database connection closed.');
-            process.exit(0);
-        });
-    });
-}
-
-// Load all the bots from the database
-let allBots = {};
-// Activates the bots
-async function loadBots() {
-    const botDocuments = await bot.find();
-    if (botDocuments) {
-        for (const botDocument of botDocuments) {
-            const ActorBot = new ActorModel(botDocument.personalInfo);
-            allBots[botDocument.personalInfo.Name] = ActorBot;
-            allBots[botDocument.personalInfo.Name] = ActorBot;
-            console.log(botDocument.personalInfo.Name + ' is Online...');
-        }
-    }
-}
-
-// Method to communicate with the bot and update the database
-async function ConverseWithBot(ActorBot, botName, message, userID) {
-
-    const response = await ActorBot.callActorModel(message, userID, botName);
-    await saveChatHistory(botName, userID, message, response);
-    await ManageAdditionalInfo(botName, response);
-    return response;
-}
-
-// Save chat history to the database
-async function saveChatHistory(botName, userID, userMessage, botResponse) {
-    const botDocument = await bot.findOne({ 'personalInfo.Name': botName });
-    if (botDocument) {
-        // Find the chat history for the given userID
-        let userChatHistory = botDocument.ChatHistory.find(chat => chat.userID === userID);
-
-        if (!userChatHistory) {
-            // If no chat history exists for this userID, create a new one
-            userChatHistory = { userID: userID, chat: [] };
-            botDocument.ChatHistory.push(userChatHistory);
-        }
-
-        // Append the user and bot messages as a nested structure
-        userChatHistory.chat.push({ user: userMessage, bot: botResponse });
-
-        await botDocument.save();
-        console.log('Chat history updated for', botName);
-    } else {
-        console.log('Bot document not found');
-    }
-}
-
-// Manages the additional information of the bot
-async function ManageAdditionalInfo(botName, response) {
-    const newInfo = (await ManagerModel(response || '')).trim();
-    if (newInfo !== 'NNIP') {
-        const botDocument = await bot.findOne({ 'personalInfo.Name': botName });
-        if (botDocument) {
-            botDocument.AdditionalInfo = (botDocument.AdditionalInfo || '') + "\n" + newInfo;
-            await botDocument.save();
-            console.log('Updated AdditionalInfo:', botDocument.AdditionalInfo);
-        } else {
-            console.log('Bot document not found');
-        }
-    }
-}
-
-async function botAvailability(botName, userID) {
-    const botDocument = await bot.findOne({ 'personalInfo.Name': botName }); 
-    if (botDocument) {
-        if (botDocument.currentUser === userID || botDocument.currentUser === null) {
-            return true
-        } else {
-            return false
-        }
-    }
-}
-
 // Function Call to load the bots
 await loadBots();
 
@@ -192,6 +27,13 @@ app.get('/', (req, res) => {
     simulation();
     res.send({ message: 'Simulation started' });
 });
+
+
+// await GenerateModel('Generate an Indian woman');
+// await GenerateModel('Generate a caucasian male');
+// await GenerateModel('Generate a palestinian woman');
+// await GenerateModel('Generate a Asian American male');
+
 
 // Conversation with bot based on UserID
 app.post('/conversation/:userID', async (req, res) => {
@@ -213,6 +55,20 @@ app.post('/conversation/:userID', async (req, res) => {
     res.send({ response: response });
 });
 
+// Conversation with bot based on UserID
+app.post('/simulation', async (req, res) => {
+    const {botA, botB} = req.body;
+    let responseA = 'you are now connected to Arthur, start the conversation';
+    let responseB = '';
+    console.log('Connected..')
+    while(true) {
+        responseA = await ConverseWithBot(allBots[botA], botA, responseB, 'arthur');
+        console.log('Response A:', responseA);
+        responseB = await ConverseWithBot(allBots[botB], botB, responseA, 'anjali');
+        console.log('Response B:', responseB);
+    }
+});
+
 app.get('/fetchBots', (req, res) => {
     const botsData = Object.keys(allBots).map(key => {
         const bot = allBots[key];
@@ -229,7 +85,7 @@ app.get('/fetchBots', (req, res) => {
 
 app.get('/checkBotAvailability/:userID/:botName', async (req, res) => {
     const { botName, userID } = req.params;
-    const isBotAvailable = await botAvailability(botName, userID);
+    const isBotAvailable = await checkBotAvailability(botName, userID);
     res.send({ available: isBotAvailable });
 })
 

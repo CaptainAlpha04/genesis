@@ -18,6 +18,8 @@ const botSchema = new mongoose.Schema({
         Personality: String,
         Good_Traits: [String],
         Bad_Traits: [String],
+        role: { type: String, default: 'citizen' },
+        username: String,
         picture: String
     },
     AdditionalInfo: {
