@@ -2,18 +2,39 @@
 "use client";
 import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import { collection, query, orderBy, onSnapshot, addDoc } from 'firebase/firestore';
+import { collection, query, orderBy, where, onSnapshot, addDoc, getDocs } from 'firebase/firestore';
 import { firestore } from '../../firebaseconfig';
 
 function Chat() {
   const { data: session } = useSession();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     if (session) {
-      const q = query(collection(firestore, 'messages'), orderBy('timestamp'));
+      const fetchUsers = async () => {
+        const usersSnapshot = await getDocs(collection(firestore, 'users'));
+        const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Filter out the current user
+        const filteredUsers = usersList.filter(user => user.email !== session.user.email);
+        setUsers(filteredUsers);
+      };
+
+      fetchUsers();
+    }
+  }, [session]);
+
+  useEffect(() => {
+    if (session && selectedUser) {
+      const combinedParticipants = [session.user.email, selectedUser.email].sort().join('_');
+      const q = query(
+        collection(firestore, 'messages'),
+        where('participants', '==', combinedParticipants),
+        orderBy('timestamp')
+      );
       const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const messagesData = [];
         querySnapshot.forEach((doc) => {
@@ -24,7 +45,7 @@ function Chat() {
 
       return () => unsubscribe();
     }
-  }, [session]);
+  }, [session, selectedUser]);
 
   useEffect(() => {
     scrollToBottom();
@@ -40,10 +61,12 @@ function Chat() {
     if (!newMessage.trim()) return;
 
     try {
+      const combinedParticipants = [session.user.email, selectedUser.email].sort().join('_');
       const docRef = await addDoc(collection(firestore, 'messages'), {
         text: newMessage,
         user: session.user.name,
         timestamp: new Date(),
+        participants: combinedParticipants,
       });
       console.log('Message sent with ID: ', docRef.id);
       setNewMessage('');
@@ -52,55 +75,86 @@ function Chat() {
     }
   };
 
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      handleSendMessage();
+    }
+  };
+
   return (
-    <div className='flex flex-col h-screen bg-gradient-to-r from-teal-400 to-gray-800'>
-      <div className='flex-grow flex flex-row'>
-        <div className='flex-grow p-4 border-r border-gray-200 overflow-y-auto '>
-          <h2 className='text-lg font-semibold mb-4'>Chat Room</h2>
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex mb-2 ${message.user === session.user.name ? 'justify-end' : 'justify-start'}`}
+    <div className="flex h-screen bg-gradient-to-r from-purple-400 via-pink-500 to-red-500">
+      <div className="flex flex-col w-1/4 p-4 bg-white shadow-lg overflow-y-auto">
+        <h3 className="text-xl font-semibold mb-4">Other Users</h3>
+        <div className="flex flex-col gap-4">
+          {users.map(user => (
+            <p
+              key={user.id}
+              className={`text-lg cursor-pointer p-2 rounded-lg transition-transform transform hover:scale-105 ${
+                selectedUser && selectedUser.id === user.id ? 'bg-blue-200' : 'bg-gray-100'
+              }`}
+              onClick={() => setSelectedUser(user)}
             >
-              <div
-                className={`p-2 max-w-xs rounded-lg ${message.user === session.user.name ? 'bg-blue-500 text-white self-end' : 'bg-gray-200 text-gray-800 self-start'}`}
-              >
-                <p className='text-sm'>{message.text}</p>
-                <p className='text-xs text-slate-700'>{message.user}</p>
-              </div>
-            </div>
+              {user.name}
+            </p>
           ))}
-          <div ref={messagesEndRef}></div>
-        </div>
-        <div className='w-64 bg-gray-100 p-4 baskervville-sc-regular bg-gradient-to-r from-slate-300 to-zinc-200'>
-          <h3 className='text-xl font-semibold mb-4'>Other Users</h3>
-          <div className='flex flex-col gap-4'>
-            {/* Placeholder for other users list */}
-            <p className='text-lg'>User 1</p>
-            <p className='text-lg'>User 2</p>
-            <p className='text-lg'>User 3</p>
-            {/* You can populate this list dynamically based on online users */}
-          </div>
         </div>
       </div>
-      {session && (
-        <div className='p-4 bg-gray-200 flex items-center fixed bottom-0 left-0 right-0'>
+      <div className="flex flex-col flex-grow p-4 bg-white shadow-lg overflow-y-auto relative">
+        {selectedUser ? (
+          <>
+            <h2 className="text-2xl font-semibold mb-4 text-gray-700">{`Chat with ${selectedUser.name}`}</h2>
+            <div className="flex flex-col space-y-4 overflow-y-auto">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${
+                    message.user === session.user.name ? 'justify-end' : 'justify-start'
+                  }`}
+                >
+                  <div
+                    className={`p-4 max-w-xs rounded-lg shadow ${
+                      message.user === session.user.name
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-200 text-gray-800'
+                    }`}
+                  >
+                    <p className="text-md">{message.text}</p>
+                    <p className="text-sm text-gray-600">{message.user}</p>
+                  </div>
+                </div>
+              ))}
+              <div ref={messagesEndRef}></div>
+            </div>
+          </>
+        ) : (
+          <h2 className="text-2xl font-semibold mb-4 text-gray-700">Select a user to start chatting</h2>
+        )}
+      </div>
+      {session && selectedUser && (
+        <div className="flex items-center p-4 bg-gray-100 fixed bottom-0 left-1/4 right-0">
           <textarea
-            className='border border-gray-300 rounded p-2 flex-grow mr-2'
+            className="flex-grow border border-gray-300 rounded-lg p-2 mr-2"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Type your message..."
           />
           <button
-            className='px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600'
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700"
             onClick={handleSendMessage}
           >
             Send
           </button>
         </div>
       )}
+      {session && !selectedUser && (
+        <div className="p-4 bg-gray-100 text-center fixed bottom-0 left-1/4 right-0">
+          <p>Select a user to start chatting.</p>
+        </div>
+      )}
       {!session && (
-        <div className='p-4 bg-gray-200 text-center fixed bottom-0 left-0 right-0'>
+        <div className="p-4 bg-gray-100 text-center fixed bottom-0 left-0 right-0">
           <p>Please sign in to view and send messages.</p>
         </div>
       )}
