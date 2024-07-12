@@ -410,7 +410,8 @@ function Page() {
                             </div>
                         ))}
                     </div>
-                    <div className="flex flex-col gap-1 bg-base-200 rounded-xl">
+
+                    <div className="flex flex-col gap-1 bg-base-200 rounded-xl mt-4">
                         <h1 className="text-balance font-bold text-xl p-3">
                             Sapiens
                         </h1>
@@ -441,7 +442,11 @@ function Page() {
                 </section>
                 {/* Main Content */}
                 {convoBot === "" && convoUser === "" ? (
-                    <div></div>
+                    <div>
+                        <button
+                            onClick={() => signOut()}
+                            className="btn btn-primary">LogOut</button>
+                    </div>
                 ) : (
                     <section className="w-3/4 h-screen">
                         <div className="flex flex-row fixed top-0 w-full bg-base-100 z-10">
