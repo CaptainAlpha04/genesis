@@ -382,6 +382,7 @@ function Page() {
                 </div>
                 <input type="text" placeholder="Search..." 
                 className="input input-md my-4 mx-4 w-11/12 bg-base-300" />
+                <button className="btn btn-primary w-11/12 mx-4" onClick={handleChatClick}>Chat</button>
                     {/* Bot List */}
                     <div className="flex flex-col gap-1 bg-base-200 rounded-xl">
                         <h1 className="text-balance font-bold text-xl p-3">
