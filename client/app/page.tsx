@@ -20,18 +20,11 @@ import {
     where,
 } from "@firebase/firestore";
 import { firestore } from "../firebaseconfig";
+
 interface Message {
-    sender: string;
-    text: string;
-    timestamp?: any; // Add this if you have a timestamp field
+    user: string;
+    bot: string;
 }
-
-interface Chat {
-    id: string;
-    users: string[];
-    messages: Message[];
-}
-
 async function fetchBots() {
     try {
         const response = await fetch("http://localhost:8000/fetchBots");
@@ -41,51 +34,6 @@ async function fetchBots() {
     } catch (error) {
         console.error("Error fetching bots", error);
     }
-}
-async function getOrCreateChat(
-    userId: string,
-    recipientId: string
-): Promise<Chat> {
-    const chatRef = collection(getFirestore(), "sapiens");
-    const q = query(chatRef, where("users", "array-contains", userId));
-
-    const querySnapshot = await getDocs(q);
-    let chat: Chat | null = null;
-
-    querySnapshot.forEach((doc) => {
-        const data = doc.data() as Chat;
-        if (data.users.includes(recipientId)) {
-            chat = { ...data, id: doc.id }; // Assign the document ID to chat object
-        }
-    });
-
-    if (!chat) {
-        try {
-            const newChatRef = await addDoc(chatRef, {
-                users: [userId, recipientId],
-                messages: [],
-                timestamp: serverTimestamp(),
-            });
-            chat = {
-                id: newChatRef.id,
-                users: [userId, recipientId],
-                messages: [],
-            };
-        } catch (error) {
-            console.error("Error creating chat document:", error);
-            throw error;
-        }
-    }
-
-    return chat as Chat;
-}
-
-async function fetchUsers() {
-    const db = getFirestore();
-    const usersCollection = collection(db, "users");
-    const usersSnapshot = await getDocs(usersCollection);
-    const usersList = usersSnapshot.docs.map((doc) => doc.data());
-    return usersList;
 }
 
 async function botAvailability(botName: string, userId: string) {
@@ -149,9 +97,7 @@ async function endConversation(
 
 function Page() {
     const [bots, setBots] = useState([]);
-    const [users, setUsers] = useState<DocumentData[]>([]);
     const [convoBot, setConvoBot] = useState<any>("");
-    const [convoUser, setConvoUser] = useState<any>("");
     const [inputValue, setInputValue] = useState("");
     const [messages, setMessages] = useState<
         { sender: string; text: string }[]
@@ -166,11 +112,8 @@ function Page() {
         if (convoBot !== "") {
             endConversation(session?.user?.id ?? "", convoBot.name, true);
         }
-        if (convoUser !== "") {
-            endConversation(session?.user?.id ?? "", convoUser.name, false);
-        }
         setConvoBot(bot);
-        setConvoUser("");
+   
 
         const botAvailable = await botAvailability(
             bot.name,
@@ -194,23 +137,26 @@ function Page() {
     };
 
     useEffect(() => {
-        const fetchData = async () => {
-            const data = await fetchBots();
-            setBots(data);
-            const usersData = await fetchUsers();
-            setUsers(usersData);
+        const addUserToFirestore = async () => {
             if (session) {
                 const userRef = doc(firestore, "users", session.user.id);
                 await setDoc(userRef, {
                     name: session.user.name,
                     email: session.user.email,
                     id: session.user.id,
-                });
+                }, { merge: true });
             }
+        };
+        addUserToFirestore();
+    }, [session]);
+    
+    useEffect(() => {
+        const fetchData = async () => {
+            const data = await fetchBots();
+            setBots(data);
         };
         fetchData();
     }, []);
-
     const messageEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -239,36 +185,6 @@ function Page() {
     const handleInputChange = (event: any) => {
         setInputValue((event.target as HTMLInputElement).value);
     };
-    const selectedUser = async (user: any) => {
-        if (!session?.user?.id || !user.id) {
-            console.error("User ID or User ID is undefined");
-            return;
-        }
-        if (convoBot !== "") {
-            endConversation(session?.user?.id ?? "", convoBot.name, true);
-            setConvoBot("");
-        }
-        if (convoUser !== "") {
-            endConversation(session?.user?.id ?? "", convoUser.name, false);
-        }
-        setConvoUser(user);
-
-        try {
-            const chat = await getOrCreateChat(session.user.id, user.id);
-
-            // Optional: Add logic to fetch and display new messages
-            const updatedChat = await getOrCreateChat(session.user.id, user.id);
-
-            setMessages(
-                updatedChat.messages.map((msg) => ({
-                    sender: msg.sender,
-                    text: msg.text,
-                }))
-            );
-        } catch (error) {
-            console.error("Error creating/getting chat document", error);
-        }
-    };
 
     const handleChatClick = () => {
         router.push("/chat");
@@ -285,9 +201,7 @@ function Page() {
             sender: "user",
             text: messageToSend,
         };
-
         setMessages((prevMessages) => [...prevMessages, userMessage]);
-        if (convoBot.hasOwnProperty("name")) {
             if (inputField) {
                 inputField.disabled = true;
                 btn.disabled = true;
@@ -300,65 +214,9 @@ function Page() {
                 session?.user?.name ?? ""
             );
             setResponse(message);
-
             const botMessage = { sender: convoBot.name, text: message };
             setMessages((prevMessages) => [...prevMessages, botMessage]);
             setBotStatus("Online");
-        } else if (convoUser.hasOwnProperty("name")) {
-            // Handle user conversation
-            if (!session?.user?.id || !convoUser.id) {
-                console.error("User ID or convoUser ID is undefined");
-                return;
-            }
-            try {
-                const chat = await getOrCreateChat(
-                    session.user.id,
-                    convoUser.id
-                );
-
-                // Ensure all fields are properly defined
-                const messageData = {
-                    sender: session.user.name ?? "user",
-                    text: messageToSend,
-                };
-
-                if (
-                    Object.values(messageData).some(
-                        (value) => value === undefined
-                    )
-                ) {
-                    console.error(
-                        "One or more fields in the message data are undefined",
-                        messageData
-                    );
-                    return;
-                }
-                const chatId = chat?.id; // Using optional chaining to safely access nested properties
-                if (!chatId) {
-                    console.error("chat.id is null or undefined");
-                    return; // or handle the error appropriately
-                }
-
-                const chatRef = doc(firestore, "sapiens", chatId);
-                await updateDoc(chatRef, {
-                    messages: arrayUnion(messageData),
-                });
-
-                // Update the timestamp separately
-                await updateDoc(chatRef, {
-                    timestamp: serverTimestamp(),
-                });
-            } catch (error) {
-                console.error("Error updating chat document", error);
-            }
-        } else {
-            console.error("No bot or user selected for the conversation");
-        }
-        if (inputField) {
-            inputField.disabled = false;
-            btn.disabled = false;
-            inputField.focus();
-        }
     };
     if (status === "loading") {
         return (
@@ -382,7 +240,7 @@ function Page() {
                 </div>
                 <input type="text" placeholder="Search..." 
                 className="input input-md my-4 mx-4 w-11/12 bg-base-300" />
-                <button className="btn btn-primary w-11/12 mx-4" onClick={handleChatClick}>Chat</button>
+                <button className="btn btn-primary w-11/12 mx-4" onClick={handleChatClick}>Sapiens</button>
                     {/* Bot List */}
                     <div className="flex flex-col gap-1 bg-base-200 rounded-xl">
                         <h1 className="text-balance font-bold text-xl p-3">
@@ -408,54 +266,26 @@ function Page() {
                             </div>
                         ))}
                     </div>
-                    <div className="flex flex-col gap-1 bg-base-200 rounded-xl">
-                        <h1 className="text-balance font-bold text-xl p-3">
-                            Sapiens
-                        </h1>
-
-                        {users.map(
-                            (user: any) =>
-                                // Check if user.id is not the same as current session user's ID
-                                user.id !== session?.user?.id && (
-                                    <div
-                                        key={user.id}
-                                        className={
-                                            "p-3 flex flex-row align-middle cursor-pointer hover:bg-base-300 text-base-content rounded-xl " +
-                                            (convoUser?.name === user.name
-                                                ? " bg-base-300"
-                                                : "")
-                                        }
-                                        onClick={() => selectedUser(user)}
-                                    >
-                                        <div className="flex flex-col">
-                                            <h1 className="font-medium">
-                                                {user.name}
-                                            </h1>
-                                        </div>
-                                    </div>
-                                )
-                        )}
-                    </div>
                 </section>
                 {/* Main Content */}
-                {convoBot === "" && convoUser === "" ? (
+                {convoBot === ""  ? (
                     <div></div>
                 ) : (
                     <section className="w-3/4 h-screen">
                         <div className="flex flex-row fixed top-0 w-full bg-base-100 z-10">
                             <div className="flex flex-row items-center gap-2 p-3">
                             
-                                {convoBot && (
+                                
                                     <img
                                         src={convoBot?.DP ?? ""}
                                         alt="Bot Avatar"
                                         className="w-10 h-10 rounded-full"
                                     />
-                                )}
+                              
 
                                 <div>
                                     <h1 className="text-md font-medium">
-                                        {convoBot?.name ?? convoUser?.name}
+                                        {convoBot?.name ?? ""}
                                     </h1>
                                     <p className="text-xs">
                                         {convoBot ? botStatus : ""}
@@ -496,11 +326,11 @@ function Page() {
                                             <div className="w-10 rounded-full">
                                                 //only avatar if convoBot
 
-                                               {convoBot && (<img
+                                           <img
                                                     alt="Bot Avatar"
                                                     src={convoBot?.DP ?? ""}
                                                 />
-                                               )}
+                                      
                                             </div>
                                         </div>
                                         <div className="chat-header">
@@ -525,7 +355,7 @@ function Page() {
                                 >
                                     <div className="chat-image avatar">
                                         <div className="w-10 rounded-full">
-                                            {!convoUser&&(
+                                           
                                             <img
                                                 alt="avatar"
                                                 src={
@@ -536,13 +366,13 @@ function Page() {
                                                         convoBot?.DP
                                                 }
                                             />
-                                            )}
+                                           
                                         </div>
                                     </div>
                                     <div className="chat-header">
                                         {message.sender === "user"
                                             ? session?.user?.name ?? ""
-                                            : convoBot?.name ?? convoUser?.name}
+                                            : convoBot?.name ?? ""}
                                     </div>
                                     <div
                                         className={`chat-bubble w-1/2 max-w-fit ${
