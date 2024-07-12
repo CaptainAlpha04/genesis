@@ -378,11 +378,13 @@ function Page() {
                 
                 <div className="p-3 flex flex-row gap-1 justify-between">
                 <h1 className="text-3xl font-bold">Genesis</h1>
+                <div className="flex flex-row">
+                <ThemeSwitch />
                 <img src={session?.user.image?? 'profile.png'} alt="User"  className="rounded-full h-10 w-10 cursor-pointer hover:shadow-xl shadow-black" onClick={() => setConvoBot('')}/>
                 </div>
+                </div>
                 <input type="text" placeholder="Search..." 
-                className="input input-md my-4 mx-4 w-11/12 bg-base-300" />
-                <button className="btn btn-primary w-11/12 mx-4" onClick={handleChatClick}>Chat</button>
+                className="input input-md my-4 mx-4 w-11/12 bg-base-200" />
                     {/* Bot List */}
                     <div className="flex flex-col gap-1 bg-base-200 rounded-xl">
                         <h1 className="text-balance font-bold text-xl p-3">
