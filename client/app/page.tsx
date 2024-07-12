@@ -217,6 +217,10 @@ function Page() {
             const botMessage = { sender: convoBot.name, text: message };
             setMessages((prevMessages) => [...prevMessages, botMessage]);
             setBotStatus("Online");
+            if (inputField) {
+                inputField.disabled = false;
+                btn.disabled = false;
+            }
     };
     if (status === "loading") {
         return (
@@ -229,19 +233,24 @@ function Page() {
     return (
         <>
             {/* Top Level Screen View */}
-            <section className="h-screen flex flex-row font-poppins text-base-content">
 
+            <section className="h-screen flex flex-row font-poppins text-base-content">
+                <section className="flex flex-col p-1 gap-1 pt-4">
+                <img src={session?.user.image?? 'profile.png'} alt="User"  className="btn btn-circle cursor-pointer hover:shadow-xl shadow-black" onClick={() => setConvoBot('')}/>
+                <ThemeSwitch />
+                <button className="btn btn-primary" onClick={handleChatClick}>
+                DNA
+                </button>
+
+                </section>
                 {/* Side Bar */}
                 <section className="w-1/4 h-screen">
                 
                 <div className="p-3 flex flex-row gap-1 justify-between">
                 <h1 className="text-3xl font-bold">Genesis</h1>
-                <img src={session?.user.image?? 'profile.png'} alt="User"  className="rounded-full h-10 w-10 cursor-pointer hover:shadow-xl shadow-black" onClick={() => setConvoBot('')}/>
-                <ThemeSwitch />
                 </div>
                 <input type="text" placeholder="Search..." 
                 className="input input-md my-4 mx-4 w-11/12 bg-base-300" />
-                <button className="btn btn-primary w-11/12 mx-4" onClick={handleChatClick}>Sapiens</button>
                     {/* Bot List */}
                     <div className="flex flex-col gap-1 bg-base-200 rounded-xl">
                         <h1 className="text-balance font-bold text-xl p-3">
