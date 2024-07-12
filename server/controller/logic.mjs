@@ -122,8 +122,8 @@ export async function ManageAdditionalInfo(botName, response) {
 }
 
 export async function checkBotAvailability(botName, userID) {
-    const bot = await bot.findOne({ 'personalInfo.Name': botName });
-    if (bot.currentUser === userID || bot.currentUser === null) {
+    const botDocument = await bot.findOne({ 'personalInfo.Name': botName });
+    if (botDocument.currentUser === userID || botDocument.currentUser === null) {
         return true;
     } else {
         return false;
@@ -197,14 +197,14 @@ async function findConversationPartner(botName) {
 }
 
 // Set up a timer to check for available bots and start conversations
-setInterval(async () => {
-    if (!botConversation) {
-        const bots = Object.keys(allBots);
-        for (const bot of bots) {
-            const isBotAvailable = await botAvailability(bot);
-            if (isBotAvailable && Math.random() < 0.3) {
-                await findConversationPartner(bot);
-            }
-        }
-    }
-}, 10000);
+// setInterval(async () => {
+//     if (!botConversation) {
+//         const bots = Object.keys(allBots);
+//         for (const bot of bots) {
+//             const isBotAvailable = await botAvailability(bot);
+//             if (isBotAvailable && Math.random() < 0.3) {
+//                 await findConversationPartner(bot);
+//             }
+//         }
+//     }
+// }, 10000);

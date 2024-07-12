@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import bot from './model/botSchema.mjs';
-import { GenerateModel, shutdown, loadBots, allBots,
+import { shutdown, loadBots, allBots,
 ConverseWithBot, checkBotAvailability } from './controller/logic.mjs';
 
 dotenv.config();

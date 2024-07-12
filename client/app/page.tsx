@@ -367,7 +367,7 @@ function Page() {
             </div>
         );
     }
-
+    
     return (
         <>
             {/* Top Level Screen View */}
@@ -379,6 +379,7 @@ function Page() {
                 <div className="p-3 flex flex-row gap-1 justify-between">
                 <h1 className="text-3xl font-bold">Genesis</h1>
                 <img src={session?.user.image?? 'profile.png'} alt="User"  className="rounded-full h-10 w-10 cursor-pointer hover:shadow-xl shadow-black" onClick={() => setConvoBot('')}/>
+                <ThemeSwitch />
                 </div>
                 <input type="text" placeholder="Search..." 
                 className="input input-md my-4 mx-4 w-11/12 bg-base-300" />
