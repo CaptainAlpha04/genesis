@@ -90,12 +90,9 @@ function Chat() {
       <section className="w-1/4 h-screen">
         <div className="p-3 flex flex-row gap-1 justify-between">
           <h1 className="text-3xl font-bold">Genesis</h1>
-          <img 
-            src={session?.user.image ?? 'profile.png'} 
-            alt="User"  
-            className="rounded-full h-10 w-10 cursor-pointer hover:shadow-xl shadow-black" 
-          />
         </div>
+        <input type="text" placeholder="Search..." 
+                className="input input-md my-4 mx-4 w-11/12 bg-base-300" />
         {/* Users List */}
         <div className="flex flex-col gap-1 bg-base-200 rounded-xl">
           <h1 className="text-balance font-bold text-xl p-3">Sapiens</h1>
@@ -115,9 +112,9 @@ function Chat() {
         </div>
       </section>
       {/* Main Content */}
-      <section className="w-3/4 h-screen flex flex-col">
         {selectedUser ? (
           <>
+          <section className="w-3/4 h-screen flex flex-col">
             <div className="flex flex-row fixed top-0 w-full bg-base-100 z-10 p-3">
               <div className="flex flex-row items-center gap-2">
                 <img
@@ -167,11 +164,16 @@ function Chat() {
                 
               </button>
             </div>
+          </section>
           </>
         ) : (
-          <h2 className="text-2xl font-semibold mb-4 text-base-content  flex justify-center ">Select a user to start chatting</h2>
+          <>
+            <div className="hero hero-content w-3/4">
+              <img src="couple.png" alt="Person" className="absolute opacity-30 -z-10 w-96" />
+              <h1 className="text-3xl">Select a fellow Sapient to chat with!</h1>
+            </div>
+          </>
         )}
-      </section>
     </section>
   );
 }

@@ -1,11 +1,15 @@
+"use client"
 import React from 'react'
+import SideBar from '../components/SideBar'
 
 function Page() {
-  return (
-    <div>
-      
-    </div>
-  )
+return (
+    <>
+    <section className="h-screen flex flex-row font-poppins text-base-content">
+    <SideBar currentPage='rooms'/>
+    </section>
+    </>
+)
 }
 
 export default Page

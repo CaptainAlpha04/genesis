@@ -240,9 +240,10 @@ function Page() {
                 {/* Main Content */}
                 {convoBot === ""  ? (
                     <>
-                        <button className="btn btn-primary" onClick={() => signOut()}>
-                            Sign Out
-                        </button>
+                    <div className="hero hero-content w-3/4">
+                        <img src="robot.png" alt="Robot" className="absolute rounded-full opacity-30 -z-10" />
+                        <h1 className="text-3xl">Select any Cybernaut to chat with!</h1>
+                    </div>
                     </>
                 ) : (
                     <section className="w-3/4 h-screen">

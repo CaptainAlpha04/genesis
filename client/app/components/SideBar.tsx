@@ -92,6 +92,13 @@ return (
             </button>
         </div>
 
+        <div className="tooltip tooltip-right" data-tip = "Notifications">
+            <button onClick={() => router.push("/notifications")}
+            className={`btn btn-square  ${currentPage === 'notifications'? " btn-primary": " btn-ghost"}`}>
+            <i className="fi fi-br-bell text-lg"></i>
+            </button>
+        </div>
+
         </section>
 
     </>

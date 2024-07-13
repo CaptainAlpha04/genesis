@@ -6,10 +6,7 @@ function Page() {
 return (
     <>
     <section className="h-screen flex flex-row font-poppins text-base-content">
-    <SideBar currentPage='profile'/>
-        <section>
-            
-        </section>
+    <SideBar currentPage='notifications'/>
     </section>
     </>
 )

@@ -129,7 +129,6 @@ export async function checkBotAvailability(botName, userID) {
         return false;
     }
 }
-
 // Check the availability of the bot
 export async function botAvailability(botName) {
     const botDocument = await bot.findOne({ 'personalInfo.Name': botName });
@@ -146,8 +145,11 @@ function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Global lock for bot conversation
+let botConversationLock = false;
+
 // Conversation between two bots
-async function interBotConversation(botA, botB) {
+export async function interBotConversation(botA, botB) {
     const maxConversationDuration = 1000 * 60 * 5; // 5 minutes
     const messageDelay = 2000; // 2 seconds delay between messages
     const startTime = Date.now();
@@ -175,8 +177,8 @@ async function interBotConversation(botA, botB) {
         // Set bots' status to available
         await setBotStatus(botA.persona.Name, null);
         await setBotStatus(botB.persona.Name, null);
+        botConversationLock = false; // Release the global lock
     }
-    botConversation = false;
 }
 
 // Find a random conversation partner for the bot
@@ -187,7 +189,6 @@ async function findConversationPartner(botName) {
             const isPartnerAvailable = await botAvailability(potentialPartner);
             if (isPartnerAvailable) {
                 await interBotConversation(allBots[botName], allBots[potentialPartner]);
-                botConversation = true;
                 break;
             }
         }
@@ -195,14 +196,17 @@ async function findConversationPartner(botName) {
 }
 
 // Set up a timer to check for available bots and start conversations
-// setInterval(async () => {
-//     if (!botConversation) {
-//         const bots = Object.keys(allBots);
-//         for (const bot of bots) {
-//             const isBotAvailable = await botAvailability(bot);
-//             if (isBotAvailable && Math.random() < 0.3) {
-//                 await findConversationPartner(bot);
-//             }
-//         }
-//     }
-// }, 10000);
+setInterval(async () => {
+    if (!botConversationLock) { // Check the global lock
+        const bots = Object.keys(allBots);
+        for (const bot of bots) {
+            const isBotAvailable = await botAvailability(bot);
+            if (isBotAvailable && Math.random() < 0.3) {
+                botConversationLock = true; // Acquire the global lock
+                await findConversationPartner(bot);
+                break;
+            }
+        }
+    }
+}, 1000 * 60 * 60); // Check every hour
+
