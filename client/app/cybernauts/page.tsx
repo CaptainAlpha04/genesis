@@ -240,9 +240,7 @@ function Page() {
                 {/* Main Content */}
                 {convoBot === ""  ? (
                     <>
-                        <button className="btn btn-primary" onClick={() => signOut()}>
-                            Sign Out
-                        </button>
+                        
                     </>
                 ) : (
                     <section className="w-3/4 h-screen">
