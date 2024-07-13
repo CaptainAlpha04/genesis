@@ -12,9 +12,14 @@ async function ManagerModel(botResponse) {
         systemInstruction: ActorSystemInstructs,
     })
 
-    const information = await model.generateContent(botResponse)
-    console.log(information.response.text())
-    return information.response.text()
+    try {
+        const information = await model.generateContent(botResponse)
+        console.log(information.response.text())
+        return information.response.text()
+    } catch (error) {
+        console.log(error)
+        return "NNIP";
+    }
     
 }
 

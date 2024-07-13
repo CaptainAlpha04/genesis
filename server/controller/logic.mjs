@@ -147,8 +147,6 @@ function delay(ms) {
 }
 
 // Conversation between two bots
-let botConversation = false;
-
 async function interBotConversation(botA, botB) {
     const maxConversationDuration = 1000 * 60 * 5; // 5 minutes
     const messageDelay = 2000; // 2 seconds delay between messages
