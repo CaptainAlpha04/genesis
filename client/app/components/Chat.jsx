@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { collection, query, orderBy, where, onSnapshot, addDoc, getDocs } from 'firebase/firestore';
 import { firestore } from '../../firebaseconfig';
+import SideBar from './SideBar';
 
 function Chat() {
   const { data: session } = useSession();
@@ -83,6 +84,8 @@ function Chat() {
 
   return (
     <section className="h-screen flex flex-row font-poppins text-base-content">
+      {/* Navigation Bar */}
+      <SideBar currentPage='sapiens'/>
       {/* Side Bar */}
       <section className="w-1/4 h-screen">
         <div className="p-3 flex flex-row gap-1 justify-between">
@@ -146,11 +149,11 @@ function Chat() {
               ))}
               <div ref={messagesEndRef}></div>
             </div>
-            <div className="w-full flex flex-row items-center bottom-0 fixed gap-2 p-2 bg-base-100">
+            <div className="w-3/4 flex flex-row items-center bottom-0 fixed gap-2 p-2 bg-base-100">
               <i className="fi fi-rr-clip text-2xl btn btn-ghost"></i>
               <i className="fi fi-rr-smile text-2xl btn btn-ghost"></i>
-              <textarea
-                className="flex-grow border border-gray-300 rounded-lg p-2 mr-2"
+              <input
+                className="input input-md w-4/5  text-lg"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -158,14 +161,15 @@ function Chat() {
               />
               <button
                 onClick={handleSendMessage}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700"
-              >
-                Send
+                className="btn btn-primary"
+                >
+                <i className="fi fi-rr-paper-plane-top font-bold"></i>
+                
               </button>
             </div>
           </>
         ) : (
-          <h2 className="text-2xl font-semibold mb-4 text-gray-700  flex justify-center ">Select a user to start chatting</h2>
+          <h2 className="text-2xl font-semibold mb-4 text-base-content  flex justify-center ">Select a user to start chatting</h2>
         )}
       </section>
     </section>

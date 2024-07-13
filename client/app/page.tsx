@@ -20,6 +20,7 @@ import {
     where,
 } from "@firebase/firestore";
 import { firestore } from "../firebaseconfig";
+import SideBar from "./components/SideBar";
 
 interface Message {
     user: string;
@@ -136,20 +137,7 @@ function Page() {
         setMessages(formattedChatHistory);
     };
 
-    useEffect(() => {
-        const addUserToFirestore = async () => {
-            if (session) {
-                const userRef = doc(firestore, "users", session.user.id);
-                await setDoc(userRef, {
-                    name: session.user.name,
-                    email: session.user.email,
-                    id: session.user.id,
-                }, { merge: true });
-            }
-        };
-        addUserToFirestore();
-    }, [session]);
-    
+
     useEffect(() => {
         const fetchData = async () => {
             const data = await fetchBots();
@@ -224,8 +212,8 @@ function Page() {
     };
     if (status === "loading") {
         return (
-            <div className="flex justify-center items-center min-h-screen">
-                <div className="border-t-4 border-primary rounded-full animate-spin h-14 w-14"></div>
+            <div className="flex justify-center items-center min-h-screen bg-base-100">
+                <div className="border-t-4 border-primary rounded-full animate-spin h-14 w-14 bg-base-100"></div>
             </div>
         );
     }
@@ -235,46 +223,8 @@ function Page() {
             {/* Top Level Screen View */}
 
             <section className="h-screen flex flex-row font-poppins text-base-content">
-                <section className="flex flex-col p-2 gap-1 pt-4">
-
-                    <div className="tooltip tooltip-right" data-tip = "Account">
-                        <img src={session?.user.image?? 'profile.png'} alt="User"  className="btn btn-circle cursor-pointer" onClick={() => setConvoBot('')}/>
-                    </div>
-
-                    <div className="tooltip tooltip-right" data-tip = "Home">
-                        <button className="btn btn-ghost btn-square" onClick={handleChatClick}>
-                        <i className="fi fi-br-home text-lg"></i>
-                        </button>
-                    </div>
-
-                    <div className="tooltip tooltip-right" data-tip = "Marketplace">
-                        <button className="btn btn-ghost btn-square" onClick={handleChatClick}>
-                        <i className="fi fi-br-shop text-lg"></i>
-                        </button>
-                    </div>
-
-                    <div className="tooltip tooltip-right" data-tip = "Sapiens">
-                        <button className="btn btn-ghost btn-square" onClick={handleChatClick}>
-                        <i className="fi fi-br-dna text-lg"></i>
-                        </button>
-                    </div>
-
-
-                    <div className="tooltip tooltip-right" data-tip = "Cybernauts">
-                        <button className="btn btn-ghost btn-square" onClick={handleChatClick}>
-                        <i className="fi fi-ss-chart-network text-lg"></i>
-                        </button>
-                    </div>
-
-                    <div className="tooltip tooltip-right" data-tip = "Rooms">
-                        <button className="btn btn-ghost btn-square" onClick={handleChatClick}>
-                        <i className="fi fi-br-users text-lg"></i>
-                        </button>
-                    </div>
-
-                    <ThemeSwitch />
-
-                </section>
+                {/* NavigationBar */}
+                <SideBar currentPage="home" />
                 {/* Side Bar */}
                 <section className="w-1/4 h-screen">
                 
