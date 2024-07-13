@@ -235,12 +235,44 @@ function Page() {
             {/* Top Level Screen View */}
 
             <section className="h-screen flex flex-row font-poppins text-base-content">
-                <section className="flex flex-col p-1 gap-1 pt-4">
-                <img src={session?.user.image?? 'profile.png'} alt="User"  className="btn btn-circle cursor-pointer hover:shadow-xl shadow-black" onClick={() => setConvoBot('')}/>
-                <ThemeSwitch />
-                <button className="btn btn-primary" onClick={handleChatClick}>
-                DNA
-                </button>
+                <section className="flex flex-col p-2 gap-1 pt-4">
+
+                    <div className="tooltip tooltip-right" data-tip = "Account">
+                        <img src={session?.user.image?? 'profile.png'} alt="User"  className="btn btn-circle cursor-pointer" onClick={() => setConvoBot('')}/>
+                    </div>
+
+                    <div className="tooltip tooltip-right" data-tip = "Home">
+                        <button className="btn btn-ghost btn-square" onClick={handleChatClick}>
+                        <i className="fi fi-br-home text-lg"></i>
+                        </button>
+                    </div>
+
+                    <div className="tooltip tooltip-right" data-tip = "Marketplace">
+                        <button className="btn btn-ghost btn-square" onClick={handleChatClick}>
+                        <i className="fi fi-br-shop text-lg"></i>
+                        </button>
+                    </div>
+
+                    <div className="tooltip tooltip-right" data-tip = "Sapiens">
+                        <button className="btn btn-ghost btn-square" onClick={handleChatClick}>
+                        <i className="fi fi-br-dna text-lg"></i>
+                        </button>
+                    </div>
+
+
+                    <div className="tooltip tooltip-right" data-tip = "Cybernauts">
+                        <button className="btn btn-ghost btn-square" onClick={handleChatClick}>
+                        <i className="fi fi-ss-chart-network text-lg"></i>
+                        </button>
+                    </div>
+
+                    <div className="tooltip tooltip-right" data-tip = "Rooms">
+                        <button className="btn btn-ghost btn-square" onClick={handleChatClick}>
+                        <i className="fi fi-br-users text-lg"></i>
+                        </button>
+                    </div>
+
+                    <ThemeSwitch />
 
                 </section>
                 {/* Side Bar */}
@@ -279,7 +311,11 @@ function Page() {
                 </section>
                 {/* Main Content */}
                 {convoBot === ""  ? (
-                    <div></div>
+                    <div>
+                        <button onClick={() => signOut()}>
+                            Sign Out
+                        </button>
+                    </div>
                 ) : (
                     <section className="w-3/4 h-screen">
                         <div className="flex flex-row fixed top-0 w-full bg-base-100 z-10">
@@ -291,7 +327,7 @@ function Page() {
                                         alt="Bot Avatar"
                                         className="w-10 h-10 rounded-full"
                                     />
-                              
+                    
 
                                 <div>
                                     <h1 className="text-md font-medium">
@@ -405,7 +441,7 @@ function Page() {
                             <input
                                 type="text"
                                 id="input-field"
-                                className="input input-md w-5/6 text-lg"
+                                className="input input-md w-4/5  text-lg"
                                 value={inputValue}
                                 onChange={handleInputChange}
                                 onKeyDown={(e) => {
