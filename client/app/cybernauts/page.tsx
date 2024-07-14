@@ -3,7 +3,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import SideBar from "../components/SideBar";
-
+import { doc, getDoc } from "@firebase/firestore";
+import { firestore } from "../../firebaseconfig";
 interface Message {
     user: string;
     bot: string;
@@ -99,6 +100,7 @@ function Page() {
     const [botStatus, setBotStatus] = useState("");
     const [chatHistory, setChatHistory] = useState<Message[]>([]);
     const { data: session, status } = useSession();
+    const [profilePicture, setProfilePicture] = useState<string | null>(null);
     const router = useRouter();
 
     const selectedBot = async (bot: any) => {
@@ -128,6 +130,20 @@ function Page() {
         ]);
         setMessages(formattedChatHistory);
     };
+    
+    useEffect(() => {
+        const fetchUserProfile = async () => {
+            if (session) {
+                const userRef = doc(firestore, "users", session.user.id);
+                const userSnapshot = await getDoc(userRef);
+                if (userSnapshot.exists()) {
+                    const userData = userSnapshot.data();
+                    setProfilePicture(userData.profilePicture ?? null);
+                }
+            }
+        };
+        fetchUserProfile();
+    }, [session]);
 
 
     useEffect(() => {
@@ -305,10 +321,7 @@ function Page() {
 
                                                 <img
                                                     alt="User Avatar"
-                                                    src={
-                                                        session?.user?.image ??
-                                                        ""
-                                                    }
+                                                    src={profilePicture ?? '/profile.png'}
                                                 />
                                             </div>
                                         </div>
@@ -361,8 +374,7 @@ function Page() {
                                                 alt="avatar"
                                                 src={
                                                     message.sender === "user"
-                                                        ? session?.user
-                                                              ?.image ?? ""
+                                                        ? profilePicture ?? ""
                                                         : 
                                                         convoBot?.DP
                                                 }

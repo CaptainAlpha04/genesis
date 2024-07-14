@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import { collection, query, orderBy, where, onSnapshot, addDoc, getDocs } from 'firebase/firestore';
+import { collection, query, orderBy, where, onSnapshot, addDoc, getDocs,doc,getDoc } from 'firebase/firestore';
 import { firestore } from '../../firebaseconfig';
 import SideBar from './SideBar';
 
@@ -11,6 +11,7 @@ function Chat() {
   const [newMessage, setNewMessage] = useState('');
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [profilePicture, setProfilePicture] = useState(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -26,6 +27,20 @@ function Chat() {
       fetchUsers();
     }
   }, [session]);
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+        if (session) {
+            const userRef = doc(firestore, "users", session.user.id);
+            const userSnapshot = await getDoc(userRef);
+            if (userSnapshot.exists()) {
+                const userData = userSnapshot.data();
+                setProfilePicture(userData.profilePicture ?? null);
+            }
+        }
+    };
+    fetchUserProfile();
+}, [session]);
+
 
   useEffect(() => {
     if (session && selectedUser) {
@@ -118,7 +133,7 @@ function Chat() {
             <div className="flex flex-row fixed top-0 w-full bg-base-100 z-10 p-3">
               <div className="flex flex-row items-center gap-2">
                 <img
-                  src={selectedUser?.image ?? "profile.png"}
+                  src={selectedUser?.profilePicture ?? "profile.png"}
                   alt="User Avatar"
                   className="w-10 h-10 rounded-full"
                 />
@@ -133,7 +148,7 @@ function Chat() {
                   <div className="chat-image avatar">
                     <div className="w-10 rounded-full">
                       <img
-                        src={message.user === session.user.name ? session?.user?.image ?? "" : selectedUser?.image ?? "profile.png"}
+                        src={message.user === session.user.name ? profilePicture ?? "profile.png" : selectedUser?.profilePicture ?? "profile.png"}
                         alt="Avatar"
                       />
                     </div>
