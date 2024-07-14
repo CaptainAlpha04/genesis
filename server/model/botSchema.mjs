@@ -1,5 +1,18 @@
 import mongoose from 'mongoose';
 
+const infoSchema = new mongoose.Schema({
+    key: String,
+    value: String,
+    source: String  // e.g., 'bot', 'user'
+});
+
+const chatHistorySchema = new mongoose.Schema({
+    userID: String,
+    chat: [
+        { user: String, bot: String }
+    ]
+});
+
 const botSchema = new mongoose.Schema({
     personalInfo: {
         Name: String,
@@ -22,20 +35,17 @@ const botSchema = new mongoose.Schema({
         username: String,
         picture: String
     },
-    AdditionalInfo: {
-        type: String,
-    },
-    ChatHistory: [
-        {
-            userID: String,
-            chat: [
-                { user: String, bot: String }
-            ]
-        }
-    ],
-    currentUser: { type: String, default: null },
+    AdditionalInfo: [infoSchema],
+    ChatHistory: [chatHistorySchema],
+    currentUser: { type: String, default: "" },
+});
 
+const userSchema = new mongoose.Schema({
+    userID: String,
+    AdditionalInfo: [infoSchema],
 });
 
 const bot = mongoose.model('Bot', botSchema);
-export default bot;
+const user = mongoose.model('User', userSchema);
+
+export { bot, user };

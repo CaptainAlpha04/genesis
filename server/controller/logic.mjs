@@ -1,4 +1,4 @@
-import bot from "../model/botSchema.mjs";
+import {bot, user} from "../model/botSchema.mjs";
 import GeneratorModel from "../middleware/GeneratorModel.mjs";
 import ActorModel from "../middleware/ActorModel.mjs";
 import ManagerModel from "../middleware/ManagerModel.mjs";
@@ -9,7 +9,7 @@ export async function GenerateModel(prompt) {
     try {
         const model = await GeneratorModel(prompt || 'Generate a persona');
         if (model) {
-            const DP = await generateImage(model.age, model.Gender, model.Ethnicity, model.Looks);
+            const DP = await generateBotImage(model.age, model.Gender, model.Ethnicity, model.Looks);
             const newBot = new bot({
                 personalInfo: {
                     Name: model.Name,
@@ -43,9 +43,20 @@ export async function GenerateModel(prompt) {
 }
 
 // Generating an image for a bot
-async function generateImage(age, gender, ethnicity, looks) {
+async function generateBotImage(age, gender, ethnicity, looks) {
     try {
         const prompt = `photorealistic profile picture of a ${age} year old beautiful ${ethnicity} ${gender}, and looks as ${looks}. Looking in the camera, normal background.`;
+        const imageLinks = await generateImagesLinks(prompt);
+        return imageLinks[Math.random() >= 0.5 ? 1 : 4];
+    } catch (err) {
+        console.trace(err);
+        return null;
+    }
+}
+
+// Generate User Image
+export async function generateUserImage(prompt) {
+    try {
         const imageLinks = await generateImagesLinks(prompt);
         return imageLinks[Math.random() >= 0.5 ? 1 : 4];
     } catch (err) {
@@ -57,7 +68,7 @@ async function generateImage(age, gender, ethnicity, looks) {
 // Shutdown the server gracefully
 export function shutdown() {
     console.log('Shutting down server...');
-    bot.updateMany({}, { $set: { currentUser: null } }, (err) => {
+    bot.updateMany({}, { $set: { currentUser: '' } }, (err) => {
         if (err) console.error('Error setting bots to inactive:', err);
         mongoose.connection.close(() => {
             console.log('Database connection closed.');
@@ -91,6 +102,7 @@ export async function ConverseWithBot(ActorBot, botName, message, userID) {
 export async function saveChatHistory(botName, userID, userMessage, botResponse) {
     const botDocument = await bot.findOne({ 'personalInfo.Name': botName });
     if (botDocument) {
+        // Update user-specific chat history
         let userChatHistory = botDocument.ChatHistory.find(chat => chat.userID === userID);
 
         if (!userChatHistory) {
@@ -99,31 +111,45 @@ export async function saveChatHistory(botName, userID, userMessage, botResponse)
         }
 
         userChatHistory.chat.push({ user: userMessage, bot: botResponse });
+
         await botDocument.save();
         console.log('Chat history updated for', botName);
     } else {
-        console.log('Bot document not found');
+        console.log('Bot document    not found');
     }
 }
 
-// Manage additional information of the bot
-export async function ManageAdditionalInfo(botName, response) {
-    const newInfo = (await ManagerModel(response || '')).trim();
+// Manages additional information for the bot and user
+export async function ManageAdditionalInfo(botName, userMessage, botResponse, userID) {
+    const newInfo = (await ManagerModel(botResponse, userMessage, userID)).trim();
     if (newInfo !== 'NNIP') {
         const botDocument = await bot.findOne({ 'personalInfo.Name': botName });
+        const userDocument = await user.findOne({ userID: userID });
+
         if (botDocument) {
-            botDocument.AdditionalInfo = (botDocument.AdditionalInfo || '') + "\n" + newInfo;
+            botDocument.AdditionalInfo.push({ key: newInfo, value: newInfo, source: 'bot' });
             await botDocument.save();
-            console.log('Updated AdditionalInfo:', botDocument.AdditionalInfo);
+            console.log('Updated Bot AdditionalInfo:', botDocument.AdditionalInfo);
         } else {
             console.log('Bot document not found');
+        }
+
+        if (userDocument) {
+            userDocument.AdditionalInfo.push({ key: newInfo, value: newInfo, source: 'user', userID: userID });
+            await userDocument.save();
+            console.log('Updated User AdditionalInfo:', userDocument.AdditionalInfo);
+        } else {
+            const newUser = new user({ userID: userID, AdditionalInfo: [{ key: newInfo, value: newInfo, source: 'user' }] });
+            await newUser.save();
+            console.log('Created new user document with AdditionalInfo:', newUser.AdditionalInfo);
         }
     }
 }
 
+
 export async function checkBotAvailability(botName, userID) {
     const botDocument = await bot.findOne({ 'personalInfo.Name': botName });
-    if (botDocument.currentUser === userID || botDocument.currentUser === null) {
+    if (botDocument.currentUser === userID || botDocument.currentUser === '') {
         return true;
     } else {
         return false;
@@ -132,7 +158,7 @@ export async function checkBotAvailability(botName, userID) {
 // Check the availability of the bot
 export async function botAvailability(botName) {
     const botDocument = await bot.findOne({ 'personalInfo.Name': botName });
-    return botDocument && botDocument.currentUser === null;
+    return botDocument && botDocument.currentUser === '';
 }
 
 // Set the bot status

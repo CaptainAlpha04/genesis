@@ -10,13 +10,23 @@ interface Message {
 }
 async function fetchBots() {
     try {
-        const response = await fetch("http://localhost:8000/fetchBots");
+        const response = await fetch(`http://localhost:8000/fetchBots`);
         const data = await response.json();
-        console.log(data.bots.DP);
         return data.bots;
     } catch (error) {
         console.error("Error fetching bots", error);
     }
+}
+
+async function fetchAssistantBot(userId: string) {
+    try {
+        const response = await fetch(`http://localhost:8000/fetchAssistantBot/${userId}`);
+        const data = await response.json();
+        return data.bot;
+    } catch (error) {
+        console.error("Error fetching assistant bot", error);
+    }
+
 }
 
 async function botAvailability(botName: string, userId: string) {
@@ -96,7 +106,7 @@ function Page() {
             endConversation(session?.user?.id ?? "", convoBot.name, true);
         }
         setConvoBot(bot);
-   
+
 
         const botAvailable = await botAvailability(
             bot.name,
@@ -122,11 +132,27 @@ function Page() {
 
     useEffect(() => {
         const fetchData = async () => {
-            const data = await fetchBots();
-            setBots(data);
+            const botData = await fetchBots();
+            if (session?.user?.id) {
+                const assistantBot = await fetchAssistantBot(session.user.id);
+                if (assistantBot) {
+                    const data: any = [...botData, assistantBot];
+                    setBots(data);
+                } else {
+                    setBots(botData);
+                }
+            } else {
+                setBots(botData);
+            }
         };
-        fetchData();
-    }, []);
+    
+        if (session) {
+            fetchData();
+        }
+    }, [session]);
+    
+
+
     const messageEndRef = useRef(null);
 
     const scrollToBottom = () => {

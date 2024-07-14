@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from '@google/generative-ai';
 import dotenv from 'dotenv';
-import bot from '../model/botSchema.mjs';
+import {bot} from '../model/botSchema.mjs';
+import { ManageAdditionalInfo } from '../controller/logic.mjs';
 dotenv.config();
 
 const safetySettings = [
@@ -13,7 +14,7 @@ const safetySettings = [
 class ActorModel {
     constructor(persona) {
         this.persona = persona;
-        this.ActorSystemInstructs = `You are ${persona} + ${process.env.ACTOR_SYSTEM_INSTRUCTS} + ${persona.additionalInfo}`; 
+        this.ActorSystemInstructs = `You are ${persona} + ${process.env.ACTOR_SYSTEM_INSTRUCTS}. + Remember that: ${persona.additionalInfo}.`; 
         this.chat = null;
     }
 
@@ -58,6 +59,10 @@ class ActorModel {
             console.log(response)
             const parsedReply = JSON.parse(response);
             const firstKey = Object.keys(parsedReply)[0];
+            
+            // Pass both bot response and user message to ManagerModel
+            await ManageAdditionalInfo(botName, chatMessage, parsedReply[firstKey], userID);
+
             return parsedReply[firstKey];
 
         } catch (error) {
