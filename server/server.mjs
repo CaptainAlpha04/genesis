@@ -64,7 +64,7 @@ app.post('/simulation', async (req, res) => {
 });
 
 app.get('/fetchBots/', (req, res) => {   
-    const botsData = Object.keys(allBots).map(key => {
+    const botsData = Object.keys(allBots).filter(key => key !== 'Neo').map(key => {
         const bot = allBots[key];
         const DP = bot.persona && bot.persona.picture ? bot.persona.picture : null;
         const Profession = bot.persona && bot.persona.Profession ? bot.persona.Profession : null;
