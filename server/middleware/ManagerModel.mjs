@@ -1,19 +1,18 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
-import { bot, user } from '../model/botSchema.mjs';
 dotenv.config();
 
 const genAI = new GoogleGenerativeAI(process.env.MANAGER_MODEL_API);
 
-async function ManagerModel(botResponse, userMessage, userID) {
-    const ActorSystemInstructs = process.env.MANAGER_SYSTEM_INSTRUCTS;
+async function ManagerModel(botResponse, userMessage, user) {
+    const ManagerSystemInstructs = process.env.MANAGER_SYSTEM_INSTRUCTS;
 
     const model = await genAI.getGenerativeModel({
         model: 'gemini-1.5-pro',
-        systemInstruction: ActorSystemInstructs,
+        systemInstruction: ManagerSystemInstructs,
     });
 
-    const combinedMessage = `Bot: ${botResponse}\nUser (${userID}): ${userMessage}`;
+    const combinedMessage = `Bot: ${botResponse}\nUser (${user}): ${userMessage}`;
 
     try {
         const information = await model.generateContent(combinedMessage);

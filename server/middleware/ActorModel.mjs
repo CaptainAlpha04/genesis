@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from '@google/generative-ai';
 import dotenv from 'dotenv';
-import {bot} from '../model/botSchema.mjs';
+import bot from '../model/botSchema.mjs';
 import { ManageAdditionalInfo } from '../controller/logic.mjs';
 dotenv.config();
 

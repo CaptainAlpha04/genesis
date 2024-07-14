@@ -1,4 +1,4 @@
-import {bot, user} from "../model/botSchema.mjs";
+import bot from "../model/botSchema.mjs";
 import GeneratorModel from "../middleware/GeneratorModel.mjs";
 import ActorModel from "../middleware/ActorModel.mjs";
 import ManagerModel from "../middleware/ManagerModel.mjs";
@@ -124,24 +124,13 @@ export async function ManageAdditionalInfo(botName, userMessage, botResponse, us
     const newInfo = (await ManagerModel(botResponse, userMessage, userID)).trim();
     if (newInfo !== 'NNIP') {
         const botDocument = await bot.findOne({ 'personalInfo.Name': botName });
-        const userDocument = await user.findOne({ userID: userID });
 
         if (botDocument) {
-            botDocument.AdditionalInfo.push({ key: newInfo, value: newInfo, source: 'bot' });
+            botDocument.AdditionalInfo.push({ value: newInfo, source: userID });
             await botDocument.save();
-            console.log('Updated Bot AdditionalInfo:', botDocument.AdditionalInfo);
+            console.log('Updated AdditionalInfo:', botDocument.AdditionalInfo);
         } else {
             console.log('Bot document not found');
-        }
-
-        if (userDocument) {
-            userDocument.AdditionalInfo.push({ key: newInfo, value: newInfo, source: 'user', userID: userID });
-            await userDocument.save();
-            console.log('Updated User AdditionalInfo:', userDocument.AdditionalInfo);
-        } else {
-            const newUser = new user({ userID: userID, AdditionalInfo: [{ key: newInfo, value: newInfo, source: 'user' }] });
-            await newUser.save();
-            console.log('Created new user document with AdditionalInfo:', newUser.AdditionalInfo);
         }
     }
 }

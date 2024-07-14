@@ -2,7 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import {bot} from './model/botSchema.mjs';
+import bot from './model/botSchema.mjs';
 import { interBotConversation, shutdown, loadBots, allBots,
 ConverseWithBot, checkBotAvailability, 
 GenerateModel, generateUserImage} from './controller/logic.mjs';
@@ -64,7 +64,7 @@ app.post('/simulation', async (req, res) => {
 });
 
 app.get('/fetchBots/', (req, res) => {   
-    const botsData = Object.keys(allBots).filter(key => key !== 'Neo').map(key => {
+    const botsData = Object.keys(allBots).map(key => {
         const bot = allBots[key];
         const DP = bot.persona && bot.persona.picture ? bot.persona.picture : null;
         const Profession = bot.persona && bot.persona.Profession ? bot.persona.Profession : null;

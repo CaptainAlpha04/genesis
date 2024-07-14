@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 
 const infoSchema = new mongoose.Schema({
-    key: String,
     value: String,
     source: String  // e.g., 'bot', 'user'
 });
@@ -40,12 +39,6 @@ const botSchema = new mongoose.Schema({
     currentUser: { type: String, default: "" },
 });
 
-const userSchema = new mongoose.Schema({
-    userID: String,
-    AdditionalInfo: [infoSchema],
-});
-
 const bot = mongoose.model('Bot', botSchema);
-const user = mongoose.model('User', userSchema);
 
-export { bot, user };
+export default bot;
