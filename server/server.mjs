@@ -46,7 +46,7 @@ app.post('/conversation/:userID', async (req, res) => {
     const botDocument = await bot.findOne({ 'personalInfo.Name': botName }); 
         if (botDocument.currentUser === userID) {
             response = await ConverseWithBot(allBots[botName], botName, message, userID);
-        } else if(botDocument.currentUser === '') {
+        } else if(botDocument.currentUser === null) {
                 botDocument.currentUser = userID;
                 await botDocument.save();
                 response = await ConverseWithBot(allBots[botName], botName, message, userID);
@@ -63,18 +63,31 @@ app.post('/simulation', async (req, res) => {
     res.send({ message: 'Simulation ended' });
 });
 
-app.get('/fetchBots/', (req, res) => {   
-    const botsData = Object.keys(allBots).filter(key => key !== 'Neo').map(key => {
-        const bot = allBots[key];
-        const DP = bot.persona && bot.persona.picture ? bot.persona.picture : null;
-        const Profession = bot.persona && bot.persona.Profession ? bot.persona.Profession : null;
-        return {
-            name: key,
-            profession: Profession,
-            DP: DP,
-        };
-    });
-    res.send({ bots: botsData });
+app.get('/fetchBots/:userID', async (req, res) => {
+    const { userID } = req.params;
+
+    try {
+        const allBots = await bot.find({ "personalInfo.Name": { $ne: "Neo" } });
+
+        const botsData = allBots.map(bot => {
+            const DP = bot.personalInfo.picture;
+            const Profession = bot.personalInfo.Profession;
+            const name = bot.personalInfo.Name;
+            const userChatHistory = bot.ChatHistory.find(chat => chat.userID === userID);
+            const relationship = Math.ceil(userChatHistory.relationship) ?? 0;
+            return {
+                name: name,
+                profession: Profession,
+                DP: DP,
+                relationship: relationship
+            };
+        });
+
+        res.send({ bots: botsData });
+    } catch (error) {
+        console.error('Error fetching bots:', error);
+        res.status(500).send({ error: 'Error fetching bots' });
+    }
 });
 
 app.get('/fetchAssistantBot/:userID', async (req, res) => {
@@ -82,10 +95,13 @@ app.get('/fetchAssistantBot/:userID', async (req, res) => {
     if(userID === process.env.CREATOR_USERID) {
         const assistantBot = await bot.findOne({ 'personalInfo.Name': 'Neo' });
         if (assistantBot) {
+            const userChatHistory = assistantBot.ChatHistory.find(chat => chat.userID === userID);
+            const relationship = Math.ceil(userChatHistory.relationship) ?? null;
             const botData = {
                 name: assistantBot.personalInfo.Name,
                 profession: assistantBot.personalInfo.Profession,
                 DP: assistantBot.personalInfo.picture,
+                relationship: relationship,
             };
             res.send({ bot: botData });
         } else {
@@ -122,7 +138,7 @@ app.get('/endConversation/:userID/:botName', async (req, res) => {
     const { userID, botName } = req.params;
     const botDocument = await bot.findOne({ 'personalInfo.Name': botName }); 
     if (botDocument) {
-        botDocument.currentUser = '';
+        botDocument.currentUser = null;
         await botDocument.save();
     }
     console.log('Conversation ended between ', botName, ' and ', userID);
@@ -136,7 +152,7 @@ app.get('/logOut/:userID', async (req, res) => {
     const { userID } = req.params;
     const botDocument = await bot.findOne({ 'currentUser': userID });
     if (botDocument) {
-        botDocument.currentUser = '';
+        botDocument.currentUser = null;
         await botDocument.save();
     }
     console.log('Logged out ', userID);

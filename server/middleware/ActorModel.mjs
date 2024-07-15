@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from '@google/generative-ai';
 import dotenv from 'dotenv';
 import bot from '../model/botSchema.mjs';
-import { ManageAdditionalInfo } from '../controller/logic.mjs';
+import { calculateRelationshipScore, ManageAdditionalInfo } from '../controller/logic.mjs';
 dotenv.config();
 
 const safetySettings = [
@@ -62,7 +62,12 @@ class ActorModel {
             
             // Pass both bot response and user message to ManagerModel
             await ManageAdditionalInfo(botName, chatMessage, parsedReply[firstKey], userID);
-
+            
+            const trustlvl = parsedReply[Object.keys(parsedReply)[1]]["Trust level"];
+            const likenesslvllvl = parsedReply[Object.keys(parsedReply)[1]]["Likeness level"];
+            const respectlvl = parsedReply[Object.keys(parsedReply)[1]]["Respect level"];
+            
+            await calculateRelationshipScore(botName, trustlvl, likenesslvllvl, respectlvl, userID);
             return parsedReply[firstKey];
 
         } catch (error) {

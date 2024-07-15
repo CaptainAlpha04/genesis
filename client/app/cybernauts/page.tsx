@@ -9,9 +9,9 @@ interface Message {
     user: string;
     bot: string;
 }
-async function fetchBots() {
+async function fetchBots(userId: string) {
     try {
-        const response = await fetch(`http://localhost:8000/fetchBots`);
+        const response = await fetch(`http://localhost:8000/fetchBots/${userId}`);
         const data = await response.json();
         return data.bots;
     } catch (error) {
@@ -148,7 +148,7 @@ function Page() {
 
     useEffect(() => {
         const fetchData = async () => {
-            const botData = await fetchBots();
+            const botData = await fetchBots(session?.user.id ?? "");
             if (session?.user?.id) {
                 const assistantBot = await fetchAssistantBot(session.user.id);
                 if (assistantBot) {
@@ -161,13 +161,13 @@ function Page() {
                 setBots(botData);
             }
         };
-    
         if (session) {
             fetchData();
         }
     }, [session]);
     
-
+    
+    const sortedBots = bots.sort((a: any, b: any) => b.relationship - a.relationship);
 
     const messageEndRef = useRef(null);
 
@@ -258,10 +258,10 @@ function Page() {
                         <h1 className="text-balance font-bold text-xl p-3">
                             Cybernauts
                         </h1>
-                        {bots.map((bot: any) => (
+                        {sortedBots.map((bot: any) => (
                             <div
                                 key={bot.name}
-                                className={"p-3 flex flex-row align-middle cursor-pointer hover:bg-base-300 text-base-content rounded-xl " + (convoBot.name === bot.name ? " bg-base-300" : "")}
+                                className={"p-3 flex flex-row cursor-pointer hover:bg-base-300 text-base-content rounded-xl" + (convoBot.name === bot.name ? " bg-base-300" : "")}
                                 onClick={() => selectedBot(bot)}
                             >
                                 <img
@@ -269,11 +269,14 @@ function Page() {
                                     alt="Bot Avatar"
                                     className="w-10 h-10 rounded-full mr-2"
                                 />
-                                <div className="flex flex-col">
+                                <div className="flex flex-col w-full">
                                     <h1 className="font-medium">{bot.name}</h1>
                                     <p className="font-light text-xs">
                                         {bot.profession}
                                     </p>
+                                </div>
+                                <div className="tooltip" data-tip="Relationship status">
+                                    <span className="indicator-item badge badge-secondary">{bot.relationship}</span>
                                 </div>
                             </div>
                         ))}

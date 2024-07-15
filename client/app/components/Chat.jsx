@@ -118,8 +118,12 @@ function Chat() {
                 className={`p-3 flex flex-row align-middle cursor-pointer hover:bg-base-300 text-base-content rounded-xl ${selectedUser && selectedUser.id === user.id ? "bg-base-300" : ""}`}
                 onClick={() => setSelectedUser(user)}
               >
-                <div className="flex flex-col">
-                  <h1 className="font-medium">{user.name}</h1>
+                <div className="flex flex-row gap-1">
+                  <img src={user.profilePicture ?? "profile.png"} alt="User Avatar" className="w-10 h-10 rounded-full mr-2" />
+                  <div>
+                    <h1 className="font-medium">{user.name}</h1>
+                    <p className='font-light text-xs'>{}</p>
+                  </div>
                 </div>
               </div>
             )

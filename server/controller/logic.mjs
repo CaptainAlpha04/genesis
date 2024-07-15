@@ -98,7 +98,7 @@ export async function ConverseWithBot(ActorBot, botName, message, userID) {
     return response;
 }
 
-// Save chat history to the database
+// Save chat history to the database    
 export async function saveChatHistory(botName, userID, userMessage, botResponse) {
     const botDocument = await bot.findOne({ 'personalInfo.Name': botName });
     if (botDocument) {
@@ -128,7 +128,7 @@ export async function ManageAdditionalInfo(botName, userMessage, botResponse, us
         if (botDocument) {
             botDocument.AdditionalInfo.push({ value: newInfo, source: userID });
             await botDocument.save();
-            console.log('Updated AdditionalInfo:', botDocument.AdditionalInfo);
+            // console.log('Updated AdditionalInfo:', botDocument.AdditionalInfo);
         } else {
             console.log('Bot document not found');
         }
@@ -138,7 +138,7 @@ export async function ManageAdditionalInfo(botName, userMessage, botResponse, us
 
 export async function checkBotAvailability(botName, userID) {
     const botDocument = await bot.findOne({ 'personalInfo.Name': botName });
-    if (botDocument.currentUser === userID || botDocument.currentUser === '') {
+    if (botDocument.currentUser === userID || botDocument.currentUser === null) {
         return true;
     } else {
         return false;
@@ -225,3 +225,21 @@ setInterval(async () => {
     }
 }, 1000 * 60 * 60); // Check every hour
 
+export async function calculateRelationshipScore(botName, trustlvl, respectlvl, likenesslvl, userID) {
+    const botDocument = await bot.findOne({ 'personalInfo.Name': botName });
+    if (botDocument) {
+        const userChatHistory = botDocument.ChatHistory.find(chat => chat.userID === userID);
+        if (userChatHistory) {
+            const normalizedTrust = normalizeScore(trustlvl, 10, -10);
+            const normalizedRespect = normalizeScore(respectlvl, 10, -10);
+            const normalizedLikeness = normalizeScore(likenesslvl, 10, -10);
+            const numOfMessages = userChatHistory.chat.length;
+            const relationshipScore = (0.5 * (normalizedTrust + normalizedRespect + normalizedLikeness)) + (0.5 * numOfMessages);
+            console.log('Relationship Score:', relationshipScore);
+            userChatHistory.relationship = relationshipScore;
+            await botDocument.save();
+        }
+    } 
+}
+
+const normalizeScore = (val, max, min) => (val - min) / (max - min);

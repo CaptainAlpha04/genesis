@@ -7,6 +7,7 @@ const infoSchema = new mongoose.Schema({
 
 const chatHistorySchema = new mongoose.Schema({
     userID: String,
+    relationship: {type: Number, default: 0},
     chat: [
         { user: String, bot: String }
     ]
@@ -36,7 +37,7 @@ const botSchema = new mongoose.Schema({
     },
     AdditionalInfo: [infoSchema],
     ChatHistory: [chatHistorySchema],
-    currentUser: { type: String, default: "" },
+    currentUser: { type: String, default: null },
 });
 
 const bot = mongoose.model('Bot', botSchema);
