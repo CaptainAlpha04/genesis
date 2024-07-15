@@ -29,12 +29,11 @@ app.get('/', (req, res) => {
     res.send({ message: 'Simulation started' });
 });
 
-
+// await GenerateModel('Generate a south-american medical doctor persona')
 // await GenerateModel('Generate an Indian woman');
 // await GenerateModel('Generate a caucasian male');
 // await GenerateModel('Generate a palestinian woman');
 // await GenerateModel('Generate a Asian American male');
-// await GenerateModel('Generate a persona by the name of Neo, Arab by ethnicity, assistant and advisor to the creator Al,around the age of 25, has a background in everything, has a calm, friendly, helpful and compassionate personality, is extremely loyal to the creator, has good futuristic looks');
 
 // Conversation with bot based on UserID
 app.post('/conversation/:userID', async (req, res) => {
@@ -74,12 +73,12 @@ app.get('/fetchBots/:userID', async (req, res) => {
             const Profession = bot.personalInfo.Profession;
             const name = bot.personalInfo.Name;
             const userChatHistory = bot.ChatHistory.find(chat => chat.userID === userID);
-            const relationship = Math.ceil(userChatHistory.relationship) ?? 0;
+            const relationship = userChatHistory ? Math.ceil(userChatHistory.relationship) : 0; // Default to 0 if undefined
             return {
                 name: name,
                 profession: Profession,
                 DP: DP,
-                relationship: relationship
+                relationship: relationship,
             };
         });
 

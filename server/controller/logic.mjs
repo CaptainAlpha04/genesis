@@ -225,17 +225,18 @@ setInterval(async () => {
     }
 }, 1000 * 60 * 60); // Check every hour
 
+// Calculates the relationship score with the user
 export async function calculateRelationshipScore(botName, trustlvl, respectlvl, likenesslvl, userID) {
     const botDocument = await bot.findOne({ 'personalInfo.Name': botName });
     if (botDocument) {
         const userChatHistory = botDocument.ChatHistory.find(chat => chat.userID === userID);
         if (userChatHistory) {
+            // Normalize the 
             const normalizedTrust = normalizeScore(trustlvl, 10, -10);
             const normalizedRespect = normalizeScore(respectlvl, 10, -10);
             const normalizedLikeness = normalizeScore(likenesslvl, 10, -10);
             const numOfMessages = userChatHistory.chat.length;
             const relationshipScore = (0.5 * (normalizedTrust + normalizedRespect + normalizedLikeness)) + (0.5 * numOfMessages);
-            console.log('Relationship Score:', relationshipScore);
             userChatHistory.relationship = relationshipScore;
             await botDocument.save();
         }
