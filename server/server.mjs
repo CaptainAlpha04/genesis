@@ -4,7 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import bot from './model/botSchema.mjs';
 import { interBotConversation, shutdown, loadBots, allBots,
-ConverseWithBot, checkBotAvailability, 
+checkBotAvailability, handleBotConversation, handleCommandConversation,
 GenerateModel, generateUserImage} from './controller/logic.mjs';
 import { checkifCommandExist } from './functions/Commands.mjs';
 
@@ -37,7 +37,9 @@ app.get('/', (req, res) => {
 // await GenerateModel('Generate a Asian American male');
 
 // Conversation with bot based on UserID
-app.post('/conversation/:userID', async (req, res) => {
+app.post('/conversation/:userID', handleConversation);
+
+async function handleConversation(req, res) {
     const userID = req.params.userID;
     let response = '';
     const { message, botName } = req.body;
@@ -45,23 +47,13 @@ app.post('/conversation/:userID', async (req, res) => {
 
     const commandResult = await checkifCommandExist(message);
     if (commandResult) {
-        const parsedResult = JSON.parse(commandResult);
-        const {Task, Type, Additional} = parsedResult;
-        response = commandResult;
+        response = await handleCommandConversation(commandResult, botName, userID);
     } else {
-        const botDocument = await bot.findOne({ 'personalInfo.Name': botName }); 
-            if (botDocument.currentUser === userID) {
-                response = await ConverseWithBot(allBots[botName], botName, message, userID);
-            } else if(botDocument.currentUser === null) {
-                    botDocument.currentUser = userID;
-                    await botDocument.save();
-                    response = await ConverseWithBot(allBots[botName], botName, message, userID);
-            } else {
-                response = 'Bot is currently busy. Please try again later.';
-            }
-        }
-    res.send({ response: response });    
-});
+        response = await handleBotConversation(botName, message, userID);
+    }
+
+    res.send({ response: response });
+}
 
 // Conversation with bot based on UserID
 app.post('/simulation', async (req, res) => {

@@ -2,7 +2,9 @@ import bot from "../model/botSchema.mjs";
 import GeneratorModel from "../middleware/GeneratorModel.mjs";
 import ActorModel from "../middleware/ActorModel.mjs";
 import ManagerModel from "../middleware/ManagerModel.mjs";
+import tasks from "../tasks/tasks.mjs";
 import { generateImagesLinks } from 'bimg';
+import e from "express";
 
 // Generating a model for a bot
 export async function GenerateModel(prompt) {
@@ -243,4 +245,49 @@ export async function calculateRelationshipScore(botName, trustlvl, respectlvl, 
     } 
 }
 
+// normalize the score
 const normalizeScore = (val, max, min) => (val - min) / (max - min);
+
+// Handle the command conversation with the bot
+export async function handleCommandConversation(commandResult, botName, userID) {
+    // Parse the command result
+    const parsedResult = JSON.parse(commandResult);
+    // Extract the task details
+    const { Task, For, Type, Instructions } = parsedResult;
+
+    // Check if the bot is available
+    const botDocument = await bot.findOne({ 'personalInfo.Name': botName });
+    // Check if the bot is available
+    if (botDocument.currentUser === userID || botDocument.currentUser === null) {
+        // Set the bot status
+        if (botDocument.currentUser === null) {
+            botDocument.currentUser = userID;
+            await botDocument.save();
+        }
+        // Checks if the bot can do the required task
+        if (botDocument.personalInfo.Profession.includes(For)) {
+            tasks[For](Instructions);
+            // Return the response
+            return await ConverseWithBot(allBots[botName], botName, `Can you please do my Task of ${Task}, of type ${Type}, regarding ${Instructions}`, userID);
+        } else {
+            // Return the simple message.
+            return await ConverseWithBot(allBots[botName], botName, `${message.split(' ').slice(1).join(' ')}`, userID);
+        }
+    }
+}
+
+// Handle the bot conversation for normal conversations
+export async function handleBotConversation(botName, message, userID) {
+    // Check if the bot exists
+    const botDocument = await bot.findOne({ 'personalInfo.Name': botName });
+    // Check if the bot is available
+    if (botDocument.currentUser === userID) {
+        return await ConverseWithBot(allBots[botName], botName, message, userID);
+    } else if (botDocument.currentUser === null) {
+        botDocument.currentUser = userID;
+        await botDocument.save();
+        return await ConverseWithBot(allBots[botName], botName, message, userID);
+    } else {
+        return 'Bot is currently busy. Please try again later.';
+    }
+}
