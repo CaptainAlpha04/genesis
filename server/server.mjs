@@ -6,6 +6,7 @@ import bot from './model/botSchema.mjs';
 import { interBotConversation, shutdown, loadBots, allBots,
 ConverseWithBot, checkBotAvailability, 
 GenerateModel, generateUserImage} from './controller/logic.mjs';
+import { checkifCommandExist } from './functions/Commands.mjs';
 
 dotenv.config();
 
@@ -41,18 +42,25 @@ app.post('/conversation/:userID', async (req, res) => {
     let response = '';
     const { message, botName } = req.body;
     console.log('Message:', message, 'Bot:', botName, 'UserID:', userID);
-    
-    const botDocument = await bot.findOne({ 'personalInfo.Name': botName }); 
-        if (botDocument.currentUser === userID) {
-            response = await ConverseWithBot(allBots[botName], botName, message, userID);
-        } else if(botDocument.currentUser === null) {
-                botDocument.currentUser = userID;
-                await botDocument.save();
+
+    const commandResult = await checkifCommandExist(message);
+    if (commandResult) {
+        const parsedResult = JSON.parse(commandResult);
+        const {Task, Type, Additional} = parsedResult;
+        response = commandResult;
+    } else {
+        const botDocument = await bot.findOne({ 'personalInfo.Name': botName }); 
+            if (botDocument.currentUser === userID) {
                 response = await ConverseWithBot(allBots[botName], botName, message, userID);
-        } else {
-            response = 'Bot is currently busy. Please try again later.';
+            } else if(botDocument.currentUser === null) {
+                    botDocument.currentUser = userID;
+                    await botDocument.save();
+                    response = await ConverseWithBot(allBots[botName], botName, message, userID);
+            } else {
+                response = 'Bot is currently busy. Please try again later.';
+            }
         }
-    res.send({ response: response });
+    res.send({ response: response });    
 });
 
 // Conversation with bot based on UserID
@@ -123,7 +131,6 @@ app.get('/fetchChatHistory/:userID/:botName', async (req, res) => {
     if (botDocument) {
         const userChatHistory = botDocument.ChatHistory.find(chat => chat.userID === userID);
         if (userChatHistory) {
-            console.log(userChatHistory.chat)
             res.send({ chatHistory: userChatHistory.chat });
         } else {
             res.send({ chatHistory: [] });

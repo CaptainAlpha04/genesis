@@ -101,6 +101,10 @@ function Page() {
     const [chatHistory, setChatHistory] = useState<Message[]>([]);
     const { data: session, status } = useSession();
     const [profilePicture, setProfilePicture] = useState<string | null>(null);
+    const [command, setCommand] = useState("");
+    const [textAfterCommand, setTextAfterCommand] = useState("");
+
+    const commands = ["/request", "/collaborate", "/feedback", "/task"];
     const router = useRouter();
 
     const selectedBot = async (bot: any) => {
@@ -195,12 +199,26 @@ function Page() {
     }, [router, session, status]);
 
     const handleInputChange = (event: any) => {
-        setInputValue((event.target as HTMLInputElement).value);
+        const inputValue = (event.target as HTMLInputElement).value;
+        setInputValue(inputValue);
+    
+        const foundCommand = commands.find(cmd => inputValue.startsWith(cmd));
+        if (foundCommand) {
+            setCommand(foundCommand.substring(1));
+            setTextAfterCommand(inputValue.slice(foundCommand.length).trim());
+            
+        } else {
+            setCommand("");
+            setTextAfterCommand(inputValue);
+        }
     };
 
+
     const handleSubmit = async (): Promise<void> => {
-        const messageToSend = inputValue;
+        const messageToSend = command ? `/${command} ${textAfterCommand}` : textAfterCommand;
         setInputValue("");
+        setCommand("");
+        setTextAfterCommand("");
         const btn = document.getElementById("submitBtn") as HTMLButtonElement;
         const inputField = document.getElementById(
             "input-field"
@@ -343,11 +361,11 @@ function Page() {
                                             <div className="w-10 rounded-full">
                                                 //only avatar if convoBot
 
-                                           <img
+                                        <img
                                                     alt="Bot Avatar"
                                                     src={convoBot?.DP ?? ""}
                                                 />
-                                      
+                                    
                                             </div>
                                         </div>
                                         <div className="chat-header">
@@ -408,7 +426,7 @@ function Page() {
                         <div className="w-3/4 flex flex-row items-center bottom-0 fixed gap-2 p-2 bg-base-100">
                             <i className="fi fi-rr-clip text-2xl btn btn-ghost"></i>
                             <i className="fi fi-rr-smile text-2xl btn btn-ghost"></i>
-                            <input
+                            <input 
                                 type="text"
                                 id="input-field"
                                 className="input input-md w-4/5  text-lg"
@@ -418,7 +436,8 @@ function Page() {
                                     e.key === "Enter" && handleSubmit();
                                 }}
                                 placeholder="Enter your message"
-                            />
+                                />
+                                {command && <span className="kbd z-10 absolute ml-36 text-lg font-mono">{command}</span>}
                             <button
                                 onClick={handleSubmit}
                                 id="submitBtn"
