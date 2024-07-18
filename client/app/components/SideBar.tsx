@@ -113,6 +113,33 @@ function SideBar({ currentPage }: { currentPage: string }) {
                     </button>
                 </div>
 
+                <div className="tooltip tooltip-right" data-tip="Graphics">
+                    <button
+                        onClick={() => router.push("/GRAPHICS")}
+                        className={`btn btn-square  ${
+                            currentPage === "GRAPHICS"
+                                ? " btn-primary"
+                                : " btn-ghost"
+                        }`}
+                    >
+                        <i className="fi fi-br-chart-network text-lg"></i>
+                    </button>
+                </div>
+
+                <div className="tooltip tooltip-right" data-tip="IDE">
+                    <button
+                        onClick={() => router.push("/IDE")}
+                        className={`btn btn-square  ${
+                            currentPage === "IDE"
+                                ? " btn-primary"
+                                : " btn-ghost"
+                        }`}
+                    >
+                        <i className="fi fi-br-chart-network text-lg"></i>
+                    </button>
+                </div>
+
+
                 <div className="tooltip tooltip-right" data-tip="Rooms">
                     <button
                         onClick={() => router.push("/rooms")}
