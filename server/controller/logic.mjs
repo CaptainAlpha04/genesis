@@ -266,9 +266,8 @@ export async function handleCommandConversation(commandResult, botName, userID) 
         }
         // Checks if the bot can do the required task
         if (botDocument.personalInfo.Profession.includes(For)) {
-            tasks[For](Instructions);
-            // Return the response
-            return await ConverseWithBot(allBots[botName], botName, `Can you please do my Task of ${Task}, of type ${Type}, regarding ${Instructions}`, userID);
+            // checks for the required task and responsed accordingly
+            return tasks[For](Type, Instructions);
         } else {
             // Return the simple message.
             return await ConverseWithBot(allBots[botName], botName, `${message.split(' ').slice(1).join(' ')}`, userID);

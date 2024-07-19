@@ -122,20 +122,20 @@ function SideBar({ currentPage }: { currentPage: string }) {
                                 : " btn-ghost"
                         }`}
                     >
-                        <i className="fi fi-br-chart-network text-lg"></i>
+                        <i className="fi fi-br-palette text-lg"></i>
                     </button>
                 </div>
 
-                <div className="tooltip tooltip-right" data-tip="IDE">
+                <div className="tooltip tooltip-right" data-tip="CodeGround">
                     <button
-                        onClick={() => router.push("/IDE")}
+                        onClick={() => router.push("/codeground")}
                         className={`btn btn-square  ${
-                            currentPage === "IDE"
+                            currentPage === "codeground"
                                 ? " btn-primary"
                                 : " btn-ghost"
                         }`}
                     >
-                        <i className="fi fi-br-chart-network text-lg"></i>
+                        <i className="fi fi-br-square-terminal text-lg"></i>
                     </button>
                 </div>
 

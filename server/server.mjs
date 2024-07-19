@@ -48,8 +48,10 @@ async function handleConversation(req, res) {
     const commandResult = await checkifCommandExist(message);
     if (commandResult) {
         response = await handleCommandConversation(commandResult, botName, userID);
+        console.log(response);
     } else {
         response = await handleBotConversation(botName, message, userID);
+        console.log(response);
     }
 
     res.send({ response: response });
