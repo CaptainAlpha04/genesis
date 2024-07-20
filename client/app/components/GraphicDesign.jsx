@@ -1,11 +1,16 @@
 import React, { useState, useRef } from 'react';
-import { SketchPicker } from 'react-color';
+import { CirclePicker } from 'react-color';
 import { Stage, Layer, Line, Rect, Circle } from 'react-konva';
+import SideBar from './SideBar';
 
 const GraphicDesignTool = () => {
   const [tool, setTool] = useState('brush');
   const [color, setColor] = useState('#000');
+  const [strokeWidth, setStrokeWidth] = useState(5);
+  const [tension, setTension] = useState(0.5);
   const [elements, setElements] = useState([]);
+  const [undoStack, setUndoStack] = useState([]);
+  const [redoStack, setRedoStack] = useState([]);
   const isDrawing = useRef(false);
 
   const handleMouseDown = (e) => {
@@ -13,7 +18,7 @@ const GraphicDesignTool = () => {
     const pos = e.target.getStage().getPointerPosition();
     if (tool === 'rectangle' || tool === 'circle') {
       setElements([...elements, { tool, color, start: pos, end: pos }]);
-    } else {
+    } else if (tool === 'brush' || tool === 'eraser') {
       setElements([...elements, { tool, color, points: [pos.x, pos.y] }]);
     }
   };
@@ -25,7 +30,7 @@ const GraphicDesignTool = () => {
     let lastElement = elements[elements.length - 1];
     if (tool === 'rectangle' || tool === 'circle') {
       lastElement.end = point;
-    } else {
+    } else if (tool === 'brush' || tool === 'eraser') {
       lastElement.points = lastElement.points.concat([point.x, point.y]);
     }
     elements.splice(elements.length - 1, 1, lastElement);
@@ -34,10 +39,34 @@ const GraphicDesignTool = () => {
 
   const handleMouseUp = () => {
     isDrawing.current = false;
+    // Push the current state to the undo stack
+    setUndoStack([...undoStack, elements]);
+    setRedoStack([]); // Clear redo stack on new action
   };
+
+  const handleUndo = () => {
+    if (undoStack.length === 0) return;
+    const lastState = undoStack[undoStack.length - 1];
+    setRedoStack([elements, ...redoStack]);
+    setElements(lastState);
+    setUndoStack(undoStack.slice(0, -1));
+  };
+
+  const handleRedo = () => {
+    if (redoStack.length === 0) return;
+    const lastRedo = redoStack[0];
+    setUndoStack([...undoStack, elements]);
+    setElements(lastRedo);
+    setRedoStack(redoStack.slice(1));
+  };
+
+  const handleClear = () => {
+    setElements([]);
+  }
 
   const renderShape = (element, i) => {
     const { tool, color, start, end } = element;
+
     switch (tool) {
       case 'rectangle':
         return (
@@ -48,7 +77,7 @@ const GraphicDesignTool = () => {
             width={end.x - start.x}
             height={end.y - start.y}
             stroke={color}
-            strokeWidth={2}
+            strokeWidth={strokeWidth}
           />
         );
       case 'circle':
@@ -61,7 +90,16 @@ const GraphicDesignTool = () => {
               Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
             ) / 2}
             stroke={color}
-            strokeWidth={2}
+            strokeWidth={strokeWidth}
+          />
+        );  
+      case 'line':
+        return (
+          <Line
+            key={i}
+            points={[start.x, start.y, end.x, end.y]}
+            stroke={color}
+            strokeWidth={strokeWidth}
           />
         );
       default:
@@ -70,37 +108,95 @@ const GraphicDesignTool = () => {
   };
 
   return (
-    <div className="flex flex-row h-screen bg-gray-100">
-      <div className="flex flex-col p-4 bg-white shadow-md justify-between">
-        <div className="flex space-x-4">
+    <section className="flex flex-row h-screen bg-base-100 font-poppins">
+    <SideBar />
+    <section className="flex flex-row h-screen bg-gray-100 font-poppins">
+      <div className="flex flex-col p-4 bg-base-100 shadow-md gap-4">
+        <h2 className='text-sm'>Color Picker</h2>
+        <div className="flex">
+          <CirclePicker color={color} onChangeComplete={(color) => setColor(color.hex)} />
+        </div>
+        <h2 className='text-sm'>Basic Tools</h2>
+        <div className="flex gap-2 flex-wrap">
+          <div className='tooltip' data-tip="Brush tool">
           <button
             onClick={() => setTool('brush')}
-            className={`p-2 rounded ${tool === 'brush' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+            className={`btn ${tool === 'brush' ? ' btn-primary' : ' btn-ghost'}`}
           >
-            Brush
+          <i className="fi fi-br-scribble"></i>
           </button>
+          </div>
+
+          <div className='tooltip' data-tip="Eraser tool">
           <button
             onClick={() => setTool('eraser')}
-            className={`p-2 rounded ${tool === 'eraser' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+            className={`btn ${tool === 'eraser' ? ' btn-primary' : ' btn-ghost'}`}
           >
-            Eraser
+            <i className="fi fi-br-eraser"></i>
           </button>
+          </div>
+
+          <div className='tooltip' data-tip="Rectangle tool">
           <button
             onClick={() => setTool('rectangle')}
-            className={`p-2 rounded ${tool === 'rectangle' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+            className={`btn ${tool === 'rectangle' ? ' btn-primary' : ' btn-ghost'}`}
           >
-            Rectangle
+            <i className="fi fi-br-rectangle-horizontal"></i>
           </button>
+          </div>
+
+          <div className='tooltip' data-tip="Circle tool">
           <button
             onClick={() => setTool('circle')}
-            className={`p-2 rounded ${tool === 'circle' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+            className={`btn ${tool === 'circle' ? ' btn-primary' : ' btn-ghost'}`}
           >
-            Circle
+            <i className="fi fi-br-circle"></i>
           </button>
+          </div>
+
+          <div className='tooltip' data-tip="Line tool">
+          <button
+            onClick={() => setTool('line')}
+            className={`btn ${tool === 'line' ? ' btn-primary' : ' btn-ghost'}`}
+          >
+            <i className="fi fi-br-slash"></i>
+          </button>
+          </div>
+
+          <div className='tooltip' data-tip="Undo">
+          <button
+            onClick={handleUndo}
+            className="btn btn-ghost"
+          >
+            <i className='fi fi-br-undo'></i>
+          </button>
+          </div>
+
+          <div className='tooltip' data-tip="Redo">
+          <button
+            onClick={handleRedo}
+            className="btn btn-ghost"
+          >
+            <i className='fi fi-br-redo'></i>
+          </button>
+          </div>
+
+          <div className='tooltip' data-tip="Clear">
+          <button
+            onClick={handleClear}
+            className="btn btn-ghost"
+          >
+            <i className='fi fi-br-trash'></i>
+          </button>
+          </div>
+
         </div>
-        <div className="flex items-center">
-          <SketchPicker color={color} onChangeComplete={(color) => setColor(color.hex)} />
-        </div>
+
+        <label className='text-sm'>Stroke Width</label>
+        <input type="range" 
+          className='range range-primary range-sm'
+          value={strokeWidth} onChange={(e) => setStrokeWidth(e.target.value)} />
+    
       </div>
       <div className="flex-grow">
         <Stage
@@ -117,8 +213,8 @@ const GraphicDesignTool = () => {
                   key={i}
                   points={element.points}
                   stroke={element.tool === 'eraser' ? '#FFF' : element.color}
-                  strokeWidth={5}
-                  tension={0.5}
+                  strokeWidth={strokeWidth}
+                  tension={tension}
                   lineCap="round"
                   globalCompositeOperation={
                     element.tool === 'eraser' ? 'destination-out' : 'source-over'
@@ -131,7 +227,8 @@ const GraphicDesignTool = () => {
           </Layer>
         </Stage>
       </div>
-    </div>
+    </section>
+    </section>
   );
 };
 

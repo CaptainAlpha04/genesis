@@ -63,10 +63,10 @@ const IDE = () => {
     if (lang) {
       const languageMap = {
         'C++': 'cpp',
-        'javascript': 'javascript',
-        'python': 'python',
-        'java': 'java',
-        'typescript': 'typescript',
+        'Javascript': 'javascript',
+        'Python': 'python',
+        'Java': 'java',
+        'Typescript': 'typescript',
       };
       setLanguage(languageMap[lang] || 'javascript');
     }
