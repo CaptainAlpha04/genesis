@@ -2,20 +2,30 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import bodyParser from 'body-parser';
+import {exec} from 'child_process';
+import { fileURLToPath } from 'url';
+import {dirname} from 'path';
+import { writeFileSync, unlink, promises as fsPromises } from 'fs';
 import bot from './model/botSchema.mjs';
 import { interBotConversation, shutdown, loadBots, allBots,
 checkBotAvailability, handleBotConversation, handleCommandConversation,
 GenerateModel, generateUserImage} from './controller/logic.mjs';
-import { checkifCommandExist } from './functions/Commands.mjs';
+import { checkifCommandExist, generateCode } from './functions/Commands.mjs';
+import path from 'path';
 
 dotenv.config();
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Middlewares
 const app = express();
 const PORT = process.env.PORT || 8000;
 app.use(express.json());
 app.use(cors());
-
+app.use(bodyParser.json());
 // Connecting to MongoDB database
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => { console.log('Connected to MongoDB'); })
@@ -165,6 +175,90 @@ app.post('/generateUserImage', async (req, res) => {
     res.send({ image });
 })
 
+app.post('/generateCode', async (req, res) => {
+    const {code, message, language} = req.body;
+    const snippet = await generateCode(language, code, message);
+    res.send({ snippet });
+})
+
+
+app.post('/execute', async (req, res) => {
+    const { language, code } = req.body;
+
+    let filePath;
+    let command;
+
+    try {
+        switch (language) {
+            case 'javascript':
+                filePath = path.join(__dirname, 'temp.js');
+                await fsPromises.writeFile(filePath, code);
+                console.log('File written:', filePath);
+                command = `node "${filePath}"`;
+                break;
+            case 'python':
+                filePath = path.join(__dirname, 'temp.py');
+                await fsPromises.writeFile(filePath, code);
+                console.log('File written:', filePath);
+                command = `python "${filePath}"`;
+                break;
+            case 'java':
+                filePath = path.join(__dirname, 'Main.java');
+                await fsPromises.writeFile(filePath, code);
+                console.log('File written:', filePath);
+                command = `javac "${filePath}" && java Main`;
+                break;
+            case 'cpp':
+                filePath = path.join(__dirname, 'main.cpp');
+                await fsPromises.writeFile(filePath, code);
+                console.log('File written:', filePath);
+                command = 'g++ main.cpp -o && main.exe';
+                break;
+            case 'typescript':
+                filePath = path.join(__dirname, 'temp.ts');
+                await fsPromises.writeFile(filePath, code);
+                console.log('File written:', filePath);
+                command = `ts-node "${filePath}"`;
+                break;
+            default:
+                return res.status(400).send('Unsupported language');
+        }
+
+        // Log command execution
+        console.log('Executing command:', command);
+
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Execution error: ${stderr || error.message}`);
+                return res.status(500).send(`Error: ${stderr || error.message}`);
+            }
+            res.send(stdout);
+        });
+    } catch (error) {
+        console.error(`Internal server error: ${error.message}`);
+        res.status(500).send(`Internal Server Error: ${error.message}`);
+    } finally {
+        // Cleanup temporary files
+        const tempFiles = ['temp.js', 'temp.py', 'Main.java', 'main.cpp', 'temp.ts', 'main.exe'];
+        for (const file of tempFiles) {
+            const tempFilePath = path.join(__dirname, file);
+            try {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                await fsPromises.access(tempFilePath).then(() => fsPromises.unlink(tempFilePath))
+                    .then(() => console.log(`Deleted file: ${file}`))
+                    .catch(err => {
+                        if (err.code === 'ENOENT') {
+                            // Do nothing
+                        } else {
+                            console.error(`Failed to delete ${file}: ${err.message}`);
+                        }
+                    });
+            } catch (err) {
+                console.error(`Failed to delete ${file}: ${err.message}`);
+            }
+        }
+    }
+});
 // Start the server
 app.listen(PORT, () => {
     console.log(`Listening on Port ${PORT}...`);

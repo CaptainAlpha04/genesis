@@ -70,8 +70,8 @@ const GraphicDesignTool = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
-      <div className="flex flex-row p-4 bg-white shadow-md justify-between">
+    <div className="flex flex-row h-screen bg-gray-100">
+      <div className="flex flex-col p-4 bg-white shadow-md justify-between">
         <div className="flex space-x-4">
           <button
             onClick={() => setTool('brush')}

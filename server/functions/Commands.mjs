@@ -48,4 +48,22 @@ async function botTask(args) {
 
 }
 
+// Commands for AI assistants
+
+// generate Code function
+export async function generateCode(language, code, message) {
+    const model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        systemInstruction: "You are a highly skilled software engineer. You have been tasked with writing a code snippet. Don't give any addditional text. If you want to explain anything, use comments. You have been given the previous code as well as the message to generate the code snippet. Don't generate the entire code unless asked for it. Just generate the code snippet.",
+    });
+
+    const res = await model.generateContent("code: " + code + "\n You are required to:" + message + "\nin language: " + language);
+    const botReplyText = res.response.text();
+        // Remove the triple backticks
+        const cleanedBotReply = botReplyText
+            .replace(/^```[a-zA-Z]*\n/, '')  // Remove starting triple backticks and language identifier
+            .replace(/\n```$/, '');         // Remove ending triple backticks
+    console.log(cleanedBotReply);
+    return cleanedBotReply;
+}
 
