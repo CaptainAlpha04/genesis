@@ -138,6 +138,18 @@ function SideBar({ currentPage }: { currentPage: string }) {
                         <i className="fi fi-br-square-terminal text-lg"></i>
                     </button>
                 </div>
+                <div className="tooltip tooltip-right" data-tip="writerPad">
+                    <button
+                        onClick={() => router.push("/writerPad")}
+                        className={`btn btn-square  ${
+                            currentPage === "writerPad"
+                                ? " btn-primary"
+                                : " btn-ghost"
+                        }`}
+                    >
+                        <i className="fi fi-br-square-terminal text-lg"></i>
+                    </button>
+                </div>
 
 
                 <div className="tooltip tooltip-right" data-tip="Rooms">
