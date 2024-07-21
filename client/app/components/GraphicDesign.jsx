@@ -1,7 +1,23 @@
 import React, { useState, useRef } from 'react';
 import { CirclePicker } from 'react-color';
-import { Stage, Layer, Line, Rect, Circle } from 'react-konva';
+import { Stage, Layer, Line, Rect, Circle, Image as KonvaImage } from 'react-konva';
 import SideBar from './SideBar';
+
+async function fetchDesign(uri, prompt) {
+
+  const response = await fetch(`http://localhost:8000/convertGraphic/:${prompt}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ image: uri })
+    }
+  );
+
+  const data = await response.json();
+  return data.image;
+}
 
 const GraphicDesignTool = () => {
   const [tool, setTool] = useState('brush');
@@ -11,8 +27,27 @@ const GraphicDesignTool = () => {
   const [elements, setElements] = useState([]);
   const [undoStack, setUndoStack] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
-  const [isDraggingEnabled, setIsDraggingEnabled] = useState(false);
+  const [prompt, setPrompt] = useState('');
+  const [image, setImage] = useState(null);
+  const [isDraggingEnabled, setIsDraggingEnabled] = useState(true);
   const isDrawing = useRef(false);
+  const stageRef = useRef();
+  const imageRef = useRef(null);
+
+  const loadImage = async (url) => {
+    const img = new window.Image();
+    img.src = await url;
+    img.onload = () => {
+      setImage(img);
+    };
+  };
+
+  const handleAddImage = async (ImageUrl) => {
+    if (ImageUrl) {
+      await loadImage(ImageUrl);
+      setElements([...elements, { tool: 'image', image: imageRef.current, x: 50, y: 50, width: 100, height: 100, draggable: true }]);
+    }
+  };
 
   const handleMouseDown = (e) => {
     isDrawing.current = true;
@@ -89,6 +124,20 @@ const GraphicDesignTool = () => {
     setElements([]);
   };
 
+  const generateDesign = async () => {
+    const btn = document.getElementById('designBtn');
+    btn.innerHTML = 'Generating...';
+    btn.disabled = true;
+    const uri = stageRef.current.toDataURL();
+    const responseImage = await fetchDesign(uri, prompt);
+    setPrompt('')
+    if(responseImage) {
+      await handleAddImage(responseImage);
+      btn.innerHTML = 'Generate Using AI';
+      btn.disabled = false;
+    }
+  }
+  
   const renderShape = (element, i) => {
     const { tool, color, start, end, strokeWidth, points, draggable } = element;
   
@@ -133,6 +182,18 @@ const GraphicDesignTool = () => {
             onDragMove={(e) => handleDragMove(e, i)}
           />
         );
+      case 'image':
+        return (
+          <KonvaImage
+            key={i}
+            image={imageRef.current}
+            x={element.x}
+            y={element.y}
+            width={element.width}
+            height={element.height}
+            draggable={draggable}
+          />
+        );
       default:
         return null;
     }
@@ -149,7 +210,8 @@ const GraphicDesignTool = () => {
           </div>
           <h2 className='text-sm font-bold'>Color Picker</h2>
           <div className="flex">
-            <CirclePicker color={color} onChangeComplete={(color) => setColor(color.hex)} width={300} />
+            <CirclePicker color={color} onChangeComplete={(color) => setColor(color.hex)} width={300}
+            />
           </div>
           <h2 className='text-sm font-bold mt-4'>Basic Tools</h2>
 
@@ -234,6 +296,7 @@ const GraphicDesignTool = () => {
                 <i className='fi fi-br-trash'></i>
               </button>
             </div>
+          
           </div>
 
           <label className='text-sm font-bold mt-4'>Stroke Width</label>
@@ -243,12 +306,27 @@ const GraphicDesignTool = () => {
             value={strokeWidth}
             onChange={(e) => setStrokeWidth(Number(e.target.value))}
             min={1}
-            max={20}
+            max={100}
             step={1}
           />
+        
+        <div className='flex flex-col gap-2'>
+          <input type="text" placeholder='Enter Prompt here...'
+          onChange={(e) => {setPrompt(e.target.value)}}
+          value={prompt}
+          className='input input-bordered mt-4' />
+          <button className='btn btn-primary'
+          id="designBtn"
+          onClick={generateDesign}
+          >
+            Generate Using AI
+          </button>
+        </div>
+        
         </div>
         <div className="flex-grow">
           <Stage
+            ref={stageRef}
             width={window.innerWidth}
             height={window.innerHeight - 100}
             onMouseDown={handleMouseDown}
@@ -274,6 +352,16 @@ const GraphicDesignTool = () => {
                   renderShape(element, i)
                 )
               )}
+              {image && (
+            <KonvaImage
+              image={image}
+              ref={imageRef}
+              x={100}
+              y={100}
+              width={400}
+              height={400}
+              />
+            )}
             </Layer>
           </Stage>
         </div>

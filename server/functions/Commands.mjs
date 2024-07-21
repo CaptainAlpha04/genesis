@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleAIFileManager } from "@google/generative-ai/server";
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -21,7 +22,7 @@ export async function checkifCommandExist(message) {
     }
 }
 
-const genAI = new GoogleGenerativeAI(process.env.GENERATOR_MODEL_API);
+const genAI = new GoogleGenerativeAI(process.env.MANAGER_MODEL_API);
 const model = genAI.getGenerativeModel({
     model: 'gemini-1.5-flash',
     systemInstruction: process.env.TASK_SYSTEM_INSTRUCTS,
@@ -66,4 +67,42 @@ export async function generateCode(language, code, message) {
     console.log(cleanedBotReply);
     return cleanedBotReply;
 }
+
+// Interpret the Image
+export async function ImageInterpreter(imagePath, userPrompt) {
+    const model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-pro',
+        systemInstruction: process.env.DESIGNER_INSTRUCTS,
+        generationConfig: {
+            responseMimeType: 'application/json',
+        }
+    });
+
+    const prompt = `According to user this is a image representing ${userPrompt}. Describe this image to a Image Generation model to generate high quality art based on what you see of the image. Use the art style that seems fit for you like abstract, surreal, animated, hyper realistic etc. with a keen look on the details`;
+
+    // Upload the image file to the Google AI File Manager
+    const fileManager = new GoogleAIFileManager(process.env.MANAGER_MODEL_API);
+    const uploadResponse = await fileManager.uploadFile(imagePath, {
+        mimeType: 'image/png',
+        displayName: 'Uploaded Image',
+    });
+
+    const fileUri = uploadResponse.file.uri;
+    console.log(fileUri);
+    // Use the file URI in the prompt
+    const res = await model.generateContent([
+    {
+        fileData: {
+            mimeType: 'image/png',
+            fileUri,
+        },
+    },
+    { text: prompt },
+    ]);
+
+    const interpretation = JSON.parse(res.response.text());
+    const promptResponse = interpretation.Prompt;
+    return promptResponse;
+}
+
 

@@ -1,6 +1,7 @@
 import dynamic from 'next/dynamic'
 import 'react-quill/dist/quill.snow.css'
 import { useState } from 'react'
+import SideBar from './SideBar'
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false })
 
@@ -34,11 +35,13 @@ export default function WriterPage() {
   }
 
   return (
+   <section className='flex flex-row'>
+   <SideBar currentPage='writerpad'/>
     <div className="min-h-screen bg-gray-100 p-6 sm:p-4 md:p-6 lg:p-8">
       <div className="min-w-full mx-auto bg-white rounded-lg shadow-md p-4 md:p-6">
         <h1 className="text-4xl font-extrabold text-center mb-6 mt-4">
           <span className="block text-gradient bg-gradient-to-r from-blue-500 via-teal-400 to-green-500 bg-clip-text text-transparent">
-            LITERARY PAD
+            WriterPad
           </span>
           <span className="block text-xl text-gray-600">Your writing space</span>
         </h1>
@@ -69,5 +72,6 @@ export default function WriterPage() {
         </div>
       </div>
     </div>
+   </section> 
   )
 }
