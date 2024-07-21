@@ -154,9 +154,9 @@ function SideBar({ currentPage }: { currentPage: string }) {
 
                 <div className="tooltip tooltip-right" data-tip="Rooms">
                     <button
-                        onClick={() => router.push("/rooms")}
+                        onClick={() => router.push("/chatrooms")}
                         className={`btn btn-square  ${
-                            currentPage === "rooms"
+                            currentPage === "chatrooms"
                                 ? " btn-primary"
                                 : " btn-ghost"
                         }`}
