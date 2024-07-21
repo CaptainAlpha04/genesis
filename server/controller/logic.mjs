@@ -60,7 +60,8 @@ async function generateBotImage(age, gender, ethnicity, looks) {
 export async function generateUserImage(prompt) {
     try {
         const imageLinks = await generateImagesLinks(prompt);
-        return imageLinks[Math.random() >= 0.5 ? 1 : 4];
+        return imageLinks[Math.floor(Math.random() * 4) + 1];
+        
     } catch (err) {
         console.trace(err);
         return null;

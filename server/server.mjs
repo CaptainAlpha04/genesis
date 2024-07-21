@@ -11,7 +11,7 @@ import bot from './model/botSchema.mjs';
 import { interBotConversation, shutdown, loadBots, allBots,
 checkBotAvailability, handleBotConversation, handleCommandConversation,
 GenerateModel, generateUserImage} from './controller/logic.mjs';
-import { checkifCommandExist, generateCode } from './functions/Commands.mjs';
+import { checkifCommandExist, generateCode, ImageInterpreter } from './functions/Commands.mjs';
 import path from 'path';
 
 dotenv.config();
@@ -23,7 +23,8 @@ const __dirname = dirname(__filename);
 // Middlewares
 const app = express();
 const PORT = process.env.PORT || 8000;
-app.use(express.json());
+app.use(express.json({limit: '50mb'}));
+app.use(express.urlencoded({limit: '50mb'}));
 app.use(cors());
 app.use(bodyParser.json());
 // Connecting to MongoDB database
@@ -259,6 +260,41 @@ app.post('/execute', async (req, res) => {
         }
     }
 });
+
+// Convert drawings to images using Bing
+app.post('/convertGraphic/:prompt', async (req, res) => {
+    const { image } = req.body;
+    const prompt = req.params.prompt;
+
+    const base64Data = image.replace(/^data:image\/png;base64,/, "");
+    const fileName = 'image.png';
+    const filePath = path.join(__dirname, fileName);
+
+    try {
+      // Save the image file
+        await fsPromises.writeFile(filePath, base64Data, 'base64');
+        console.log('File written:', filePath);
+
+      // Interpret the image
+        const interpretation = await ImageInterpreter(filePath, prompt);
+        console.log(interpretation);
+      // Clean up the image file after interpretation
+        await fsPromises.unlink(filePath);
+        
+        if(interpretation) {
+            const result = await generateUserImage(interpretation);
+            console.log(result);
+            res.send({ image: result });
+        } else {
+            res.send({image: null});
+        } 
+
+    } catch (error) {
+        console.error('Error processing image:', error);
+        res.status(500).send('Error processing image.');
+    }
+});
+
 // Start the server
 app.listen(PORT, () => {
     console.log(`Listening on Port ${PORT}...`);
