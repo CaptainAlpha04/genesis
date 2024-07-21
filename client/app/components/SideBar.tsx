@@ -113,11 +113,11 @@ function SideBar({ currentPage }: { currentPage: string }) {
                     </button>
                 </div>
 
-                <div className="tooltip tooltip-right" data-tip="Graphics">
+                <div className="tooltip tooltip-right" data-tip="DesignRoom">
                     <button
-                        onClick={() => router.push("/GRAPHICS")}
+                        onClick={() => router.push("/designroom")}
                         className={`btn btn-square  ${
-                            currentPage === "GRAPHICS"
+                            currentPage === "designroom"
                                 ? " btn-primary"
                                 : " btn-ghost"
                         }`}
