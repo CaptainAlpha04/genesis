@@ -265,7 +265,6 @@ app.post('/execute', async (req, res) => {
 app.post('/convertGraphic/:prompt', async (req, res) => {
     const { image } = req.body;
     const prompt = req.params.prompt;
-
     const base64Data = image.replace(/^data:image\/png;base64,/, "");
     const fileName = 'image.png';
     const filePath = path.join(__dirname, fileName);

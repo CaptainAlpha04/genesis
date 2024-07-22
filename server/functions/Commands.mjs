@@ -78,7 +78,7 @@ export async function ImageInterpreter(imagePath, userPrompt) {
         }
     });
 
-    const prompt = `According to user this is a image representing ${userPrompt}. Describe this image to a Image Generation model to generate high quality art based on what you see of the image. Use the art style that seems fit for you like abstract, surreal, animated, hyper realistic etc. with a keen look on the details`;
+    const prompt = `According to user this is a image representing ${userPrompt}. Combine the user's description and request with what you see and Describe this image to a Image Generation model to generate high quality art based on what you see of the image. Use the art style that seems fit for you like abstract, surreal, animated, hyper realistic etc. with a keen look on the details`;
 
     // Upload the image file to the Google AI File Manager
     const fileManager = new GoogleAIFileManager(process.env.MANAGER_MODEL_API);

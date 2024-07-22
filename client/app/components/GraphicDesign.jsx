@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { CirclePicker } from 'react-color';
-import { Stage, Layer, Line, Rect, Circle, Image as KonvaImage } from 'react-konva';
+import { Stage, Layer, Line, Rect, Circle } from 'react-konva';
 import SideBar from './SideBar';
+import { set } from 'mongoose';
 
 async function fetchDesign(uri, prompt) {
 
@@ -28,11 +29,15 @@ const GraphicDesignTool = () => {
   const [undoStack, setUndoStack] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
   const [prompt, setPrompt] = useState('');
+  const [lastPrompt, setLastPrompt] = useState('');
   const [image, setImage] = useState();
+  const [promptBar, setPromptBar] = useState(false);
+  const [refineLoading, setRefineLoading] = useState(false);
+  const [refinePrompt, setRefinePrompt] = useState('');
+  const [regenerateLoading, setRegenerateLoading] = useState(false);
   const [isDraggingEnabled, setIsDraggingEnabled] = useState(false);
   const isDrawing = useRef(false);
   const stageRef = useRef();
-  const imageRef = useRef(null);
 
   const loadImage = async (url) => {
     const img = new window.Image();
@@ -142,6 +147,7 @@ const GraphicDesignTool = () => {
     btn.disabled = true;
     const uri = stageRef.current.toDataURL();
     const responseImage = await fetchDesign(uri, prompt);
+    setLastPrompt(prompt);
     setPrompt('')
     if(responseImage) {
       await handleAddImage(responseImage);
@@ -149,6 +155,70 @@ const GraphicDesignTool = () => {
       btn.disabled = false;
     }
   }
+
+  const downloadImage = () => {
+    const uri = image.src;
+    const link = document.createElement('a');
+    link.download = 'design.png';
+    link.href = uri;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  const refineDesign = async () => {
+    const uri = await imageToDataURL(image.src); // Convert image URL to data URL with specific type
+    setPromptBar(true);
+    const refineBtn = document.getElementById('refineBtn');
+    const refinePrompt = document.getElementById('refineInput');
+    refineBtn.disabled = true;
+    refinePrompt.disabled = true;
+    setLastPrompt(refinePrompt);
+    setRefinePrompt('');
+    setRefineLoading(true);
+    const responseImage = await fetchDesign(uri, lastPrompt);
+    if (responseImage) {
+      setImage(null);
+      await handleAddImage(responseImage);
+      refineBtn.disabled = false;
+      refinePrompt.disabled = false;
+      setPromptBar(false);
+      setRefineLoading(false);
+    }
+  }
+  
+  // Helper function to convert image URL to data URL
+  const imageToDataURL = async (url) => {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        // Ensure the data URL is of type data:image/png;base64
+        const base64Data = reader.result.split(',')[1]; // Get the base64 part
+        const dataURL = `data:image/png;base64,${base64Data}`;
+        resolve(dataURL);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+  
+
+  const regenerateDesign = async () => {
+    const uri = stageRef.current.toDataURL();
+    const regenerateBtn = document.getElementById('regenerateBtn');
+    regenerateBtn.disabled = true;
+    setRegenerateLoading(true); 
+    const responseImage = await fetchDesign(uri, lastPrompt);
+    if(responseImage) {
+      setImage(null);
+      await handleAddImage(responseImage);
+      regenerateBtn.disabled = false;
+      setRegenerateLoading(false);
+  }
+}
   
   const renderShape = (element, i) => {
     const { tool, color, start, end, strokeWidth, points, draggable } = element;
@@ -194,26 +264,13 @@ const GraphicDesignTool = () => {
             onDragMove={(e) => handleDragMove(e, i)}
           />
         );  
-    case 'image':
-      return (
-        <KonvaImage
-          key={i}
-          image={element.image}
-          x={element.x}
-          y={element.y}
-          width={element.width}
-          height={element.height}
-          draggable={element.draggable}
-          onDragMove={(e) => handleDragMove(e, i)}
-        />
-      );
       default:
         return null;
     }
   };
 
   return (
-    <section className="flex flex-row h-screen bg-base-100 font-poppins">
+    <section className="flex flex-row h-screen bg-base-100 font-poppins overflow-hidden">
       <SideBar currentPage='designroom' />
       <section className="flex flex-row h-full bg-base-300">
         <div className="flex flex-col p-4 bg-base-100 shadow-md gap-4">
@@ -369,32 +426,77 @@ const GraphicDesignTool = () => {
                   renderShape(element, i)
                 )
               )}
-              <div className=''>
-                  {image && (
-                      <KonvaImage
-                        image={image}
-                        ref={imageRef}
-                        x={200}
-                        y={200}
-                        width={400}
-                        height={400}
-                        />
-                )}
-            </div>
             </Layer>
           </Stage>
         </div>
         {/* Image Panel */}
         {image && (
           <div
-            className='flex flex-col gap-4 p-4 bg-base-100 shadow-md w-1/4 absolute bottom-10 right-10'
+            className='flex flex-col gap-4 p-4 bg-base-100 shadow-md h-2/3 absolute bottom-10 right-10 rounded-lg'
           >
-            <img src={image.src} alt="Generated" width="200" />
+          {promptBar && (
+            <input type="text"
+            onKeyDown={(e) => {if(e.key === 'Enter') {refineDesign()}}}
+            className=" w-full input input-bordered input-md absolute -top-14 right-0"
+            placeholder='Enter Improvements ...'
+            id="refineInput"
+            onChange={(e) => {setRefinePrompt(e.target.value)}}
+            value={refinePrompt}
+            />
+          )}
+            <div className='flex flex-row justify-between'>
+              <h1 className='text-md font-bold mt-2'>Generated Image</h1>
+
+              <div className='flex gap-1'>
+              <div className='tooltip' data-tip="Download">
+                <button
+                className='btn btn-ghost'
+                onClick={downloadImage}
+                >
+                <i className='fi fi-br-download'></i>
+                </button>
+                </div>
+
+                <div className='tooltip' data-tip="Refine">
+                <button
+                id = "refineBtn"
+                className='btn btn-ghost'
+                onClick={() => {setPromptBar(true)}}
+                >
+                <i className={`fi fi-br-magic-wand ${refineLoading === true ? ' animate-pulse':''}`}></i>
+                </button>
+                </div>
+
+                <div className='tooltip' data-tip="Regenerate">
+                <button
+                id="regenerateBtn"
+                className='btn btn-ghost'
+                onClick={regenerateDesign}
+                >{regenerateLoading ? 
+                <i className='fi fi br-spin fi-br-spinner animate-spin'></i>
+                :
+                <i className='fi fi-br-rotate-right'></i>
+                }
+                </button>
+                </div>
+              {/* Close Button */}
+              <button
+                className='btn btn-ghost'
+                onClick={() => setImage(null)}
+                >
+                <i className='fi fi-br-cross'></i>
+                </button>
+
+              </div>
+                
+            </div>
+            <img src={image.src} alt="Generated" width="400" />
           </div>
         )}
       </section>
     </section>
   );
 };
+
 
 export default GraphicDesignTool;
