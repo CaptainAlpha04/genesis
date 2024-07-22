@@ -21,33 +21,45 @@ async function fetchDesign(uri, prompt) {
 
 const GraphicDesignTool = () => {
   const [tool, setTool] = useState('brush');
-  const [color, setColor] = useState('#000');
+  const [color, setColor] = useState('#fff');
   const [strokeWidth, setStrokeWidth] = useState(5);
   const [tension, setTension] = useState(0.5);
   const [elements, setElements] = useState([]);
   const [undoStack, setUndoStack] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
   const [prompt, setPrompt] = useState('');
-  const [image, setImage] = useState(null);
-  const [isDraggingEnabled, setIsDraggingEnabled] = useState(true);
+  const [image, setImage] = useState();
+  const [isDraggingEnabled, setIsDraggingEnabled] = useState(false);
   const isDrawing = useRef(false);
   const stageRef = useRef();
   const imageRef = useRef(null);
 
   const loadImage = async (url) => {
     const img = new window.Image();
-    img.src = await url;
+    img.src = url;
     img.onload = () => {
       setImage(img);
     };
   };
 
-  const handleAddImage = async (ImageUrl) => {
-    if (ImageUrl) {
-      await loadImage(ImageUrl);
-      setElements([...elements, { tool: 'image', image: imageRef.current, x: 50, y: 50, width: 100, height: 100, draggable: true }]);
+  const handleAddImage = async (imageUrl) => {
+    if (imageUrl) {
+      await loadImage(imageUrl);
+      setElements((prevElements) => [
+        ...prevElements,
+        {
+          tool: 'image',
+          image, // make sure the image state is updated
+          x: 50,
+          y: 50,
+          width: 100,
+          height: 100,
+          draggable: true,
+        },
+      ]);
     }
   };
+  
 
   const handleMouseDown = (e) => {
     isDrawing.current = true;
@@ -181,19 +193,20 @@ const GraphicDesignTool = () => {
             draggable={draggable}
             onDragMove={(e) => handleDragMove(e, i)}
           />
-        );
-      case 'image':
-        return (
-          <KonvaImage
-            key={i}
-            image={imageRef.current}
-            x={element.x}
-            y={element.y}
-            width={element.width}
-            height={element.height}
-            draggable={draggable}
-          />
-        );
+        );  
+    case 'image':
+      return (
+        <KonvaImage
+          key={i}
+          image={element.image}
+          x={element.x}
+          y={element.y}
+          width={element.width}
+          height={element.height}
+          draggable={element.draggable}
+          onDragMove={(e) => handleDragMove(e, i)}
+        />
+      );
       default:
         return null;
     }
@@ -202,7 +215,7 @@ const GraphicDesignTool = () => {
   return (
     <section className="flex flex-row h-screen bg-base-100 font-poppins">
       <SideBar currentPage='designroom' />
-      <section className="flex flex-row h-full bg-gray-100">
+      <section className="flex flex-row h-full bg-base-300">
         <div className="flex flex-col p-4 bg-base-100 shadow-md gap-4">
           <div className='mb-4'>
             <h1 className='text-3xl font-bold'>Genesis</h1>
@@ -211,6 +224,10 @@ const GraphicDesignTool = () => {
           <h2 className='text-sm font-bold'>Color Picker</h2>
           <div className="flex">
             <CirclePicker color={color} onChangeComplete={(color) => setColor(color.hex)} width={300}
+            colors = {
+              ["#f44336", "#e91e63", "#9c27b0", "#673ab7", "#3f51b5", "#2196f3", "#03a9f4", "#00bcd4", "#009688", "#4caf50", "#8bc34a", "#cddc39", "#ffeb3b", "#ffc107", "#ff9800", "#ff5722", "#795548", "#607d8b", "#000000", "#ffffff" ]
+            }
+            
             />
           </div>
           <h2 className='text-sm font-bold mt-4'>Basic Tools</h2>
@@ -261,12 +278,12 @@ const GraphicDesignTool = () => {
               </button>
             </div>
 
-            <div className='tooltip' data-tip="Selection tool">
+            <div className='tooltip' data-tip="Move tool">
               <button
                 onClick={() => {setIsDraggingEnabled(!isDraggingEnabled)}}
                 className={`btn ${isDraggingEnabled === true ? 'btn-primary' : 'btn-ghost'}`}
               >
-                <i className="fi fi-br-cursor"></i>
+                <i className="fi fi-br-arrows"></i>
               </button>
             </div>
 
@@ -328,7 +345,7 @@ const GraphicDesignTool = () => {
           <Stage
             ref={stageRef}
             width={window.innerWidth}
-            height={window.innerHeight - 100}
+            height={window.innerHeight}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -339,7 +356,7 @@ const GraphicDesignTool = () => {
                   <Line
                     key={i}
                     points={element.points}
-                    stroke={element.tool === 'eraser' ? '#FFF' : element.color}
+                    stroke={element.tool === 'eraser' ? "#FFF" : element.color}
                     strokeWidth={element.strokeWidth}
                     tension={tension}
                     onDragMove={(e) => handleDragMove(e, i)}
@@ -352,19 +369,29 @@ const GraphicDesignTool = () => {
                   renderShape(element, i)
                 )
               )}
-              {image && (
-            <KonvaImage
-              image={image}
-              ref={imageRef}
-              x={100}
-              y={100}
-              width={400}
-              height={400}
-              />
-            )}
+              <div className=''>
+                  {image && (
+                      <KonvaImage
+                        image={image}
+                        ref={imageRef}
+                        x={200}
+                        y={200}
+                        width={400}
+                        height={400}
+                        />
+                )}
+            </div>
             </Layer>
           </Stage>
         </div>
+        {/* Image Panel */}
+        {image && (
+          <div
+            className='flex flex-col gap-4 p-4 bg-base-100 shadow-md w-1/4 absolute bottom-10 right-10'
+          >
+            <img src={image.src} alt="Generated" width="200" />
+          </div>
+        )}
       </section>
     </section>
   );

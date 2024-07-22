@@ -35,8 +35,8 @@ export default function WriterPage() {
   }
 
   return (
-   <section className='flex flex-row'>
-   <SideBar currentPage='writerpad'/>
+  <section className='flex flex-row'>
+  <SideBar currentPage='writerpad'/>
     <div className="min-h-screen bg-gray-100 p-6 sm:p-4 md:p-6 lg:p-8">
       <div className="min-w-full mx-auto bg-white rounded-lg shadow-md p-4 md:p-6">
         <h1 className="text-4xl font-extrabold text-center mb-6 mt-4">
