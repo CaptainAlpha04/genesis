@@ -23,6 +23,8 @@ async function fetchDesign(uri, prompt) {
 const GraphicDesignTool = () => {
   const [tool, setTool] = useState('brush');
   const [color, setColor] = useState('#fff');
+  const [fillColor, setFillColor] = useState('#fff');
+  const [isFillEnabled, setIsFillEnabled] = useState(false);
   const [strokeWidth, setStrokeWidth] = useState(5);
   const [tension, setTension] = useState(0.5);
   const [elements, setElements] = useState([]);
@@ -69,15 +71,23 @@ const GraphicDesignTool = () => {
   const handleMouseDown = (e) => {
     isDrawing.current = true;
     const pos = e.target.getStage().getPointerPosition();
+    const commonProps = {
+      tool,
+      color,
+      strokeWidth,
+      draggable: isDraggingEnabled,
+      fill: isFillEnabled ? color : undefined,  // Use color or set a default fill color
+    };
+    
     if (tool === 'line') {
-      setElements([...elements, { tool, color, points: [pos.x, pos.y, pos.x, pos.y], strokeWidth, draggable: isDraggingEnabled }]);
+      setElements([...elements, { ...commonProps, points: [pos.x, pos.y, pos.x, pos.y] }]);
     } else if (tool === 'rectangle' || tool === 'circle') {
-      setElements([...elements, { tool, color, strokeWidth, start: pos, end: pos, draggable: isDraggingEnabled }]);
+      setElements([...elements, { ...commonProps, fill: fillColor, start: pos, end: pos }]);
     } else if (tool === 'brush' || tool === 'eraser') {
-      setElements([...elements, { tool, color, strokeWidth, points: [pos.x, pos.y], draggable: false }]);
+      setElements([...elements, { ...commonProps, points: [pos.x, pos.y], draggable: false }]);
     }
-  };  
-
+  };
+  
   const handleMouseMove = (e) => {
     if (!isDrawing.current) return;
     const stage = e.target.getStage();
@@ -220,54 +230,57 @@ const GraphicDesignTool = () => {
   }
 }
   
-  const renderShape = (element, i) => {
-    const { tool, color, start, end, strokeWidth, points, draggable } = element;
-  
-    switch (tool) {
-      case 'rectangle':
-        return (
-          <Rect
-            key={i}
-            x={start.x}
-            y={start.y}
-            width={end.x - start.x}
-            height={end.y - start.y}
-            stroke={color}
-            strokeWidth={strokeWidth}
-            draggable={draggable}
-            onDragMove={(e) => handleDragMove(e, i)}
-          />
-        );
-      case 'circle':
-        return (
-          <Circle
-            key={i}
-            x={(start.x + end.x) / 2}
-            y={(start.y + end.y) / 2}
-            radius={Math.sqrt(
-              Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
-            ) / 2}
-            stroke={color}
-            strokeWidth={strokeWidth}
-            draggable={draggable}
-            onDragMove={(e) => handleDragMove(e, i)}
-          />
-        );
-      case 'line':
-        return (
-          <Line
-            key={i}
-            points={points} // Ensure points have exactly four values
-            stroke={color}
-            strokeWidth={strokeWidth}
-            draggable={draggable}
-            onDragMove={(e) => handleDragMove(e, i)}
-          />
-        );  
-      default:
-        return null;
-    }
-  };
+const renderShape = (element, i) => {
+  const { tool, color, fill, start, end, strokeWidth, points, draggable } = element;
+
+  switch (tool) {
+    case 'rectangle':
+      return (
+        <Rect
+          key={i}
+          x={start.x}
+          y={start.y}
+          width={end.x - start.x}
+          height={end.y - start.y}
+          stroke={color}
+          strokeWidth={strokeWidth}
+          draggable={draggable}
+          onDragMove={(e) => handleDragMove(e, i)}
+          fill={fill} // Add fill property
+        />
+      );
+    case 'circle':
+      return (
+        <Circle
+          key={i}
+          x={(start.x + end.x) / 2}
+          y={(start.y + end.y) / 2}
+          radius={Math.sqrt(
+            Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
+          ) / 2}
+          stroke={color}
+          strokeWidth={strokeWidth}
+          draggable={draggable}
+          onDragMove={(e) => handleDragMove(e, i)}
+          fill={fill} // Add fill property
+        />
+      );
+    case 'line':
+      return (
+        <Line
+          key={i}
+          points={points}
+          stroke={color}
+          strokeWidth={strokeWidth}
+          draggable={draggable}
+          onDragMove={(e) => handleDragMove(e, i)}
+        />
+      );
+    default:
+      return null;
+  }
+};
+
 
   return (
     <section className="flex flex-row h-screen bg-base-100 font-poppins overflow-hidden">
@@ -280,7 +293,7 @@ const GraphicDesignTool = () => {
           </div>
           <h2 className='text-sm font-bold'>Color Picker</h2>
           <div className="flex">
-            <CirclePicker color={color} onChangeComplete={(color) => setColor(color.hex)} width={300}
+            <CirclePicker color={color} onChangeComplete={(color) => {setColor(color.hex); setFillColor(color.hex)}} width={300}
             colors = {
               ["#f44336", "#e91e63", "#9c27b0", "#673ab7", "#3f51b5", "#2196f3", "#03a9f4", "#00bcd4", "#009688", "#4caf50", "#8bc34a", "#cddc39", "#ffeb3b", "#ffc107", "#ff9800", "#ff5722", "#795548", "#607d8b", "#000000", "#ffffff" ]
             }
@@ -341,6 +354,15 @@ const GraphicDesignTool = () => {
                 className={`btn ${isDraggingEnabled === true ? 'btn-primary' : 'btn-ghost'}`}
               >
                 <i className="fi fi-br-arrows"></i>
+              </button>
+            </div>
+
+            <div className='tooltip' data-tip="Fill tool">
+              <button
+                onClick={() => {setIsFillEnabled(!isFillEnabled)}}
+                className={`btn ${isFillEnabled === true ? 'btn-primary' : 'btn-ghost'}`}
+              >
+                <i className="fi fi-br-fill"></i>
               </button>
             </div>
 
