@@ -63,3 +63,39 @@ body {
   font-weight: 400;
   font-style: normal;
 }
+/* components/CalendarTailwind.css */
+.custom-calendar {
+  @apply p-2;
+}
+
+.react-calendar {
+  @apply border-none;
+}
+
+.react-calendar__navigation {
+  @apply flex justify-between items-center mb-2;
+}
+
+.react-calendar__month-view__weekdays {
+  @apply flex justify-between text-gray-600 font-medium dark:text-gray-400;
+}
+
+.react-calendar__month-view__weekdays__weekday {
+  @apply flex-1 text-center;
+}
+
+.react-calendar__tile {
+  @apply flex justify-center items-center h-8 w-8 text-center hover:bg-gray-200 rounded-full transition duration-150 dark:hover:bg-gray-700 dark:text-gray-100;
+}
+
+.react-calendar__tile--now {
+  @apply bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300;
+}
+
+.react-calendar__tile--active {
+  @apply bg-blue-600 text-white dark:bg-blue-500 dark:text-white;
+}
+
+.react-calendar__tile--hasActive {
+  @apply bg-blue-600 text-white dark:bg-blue-500 dark:text-white;
+}
