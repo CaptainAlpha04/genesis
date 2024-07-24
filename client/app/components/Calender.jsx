@@ -7,7 +7,7 @@ const CustomCalendar = () => {
 
   return (
     <div className="flex justify-center items-center p-2 relative bottom-10">
-      <div className="w-full max-w-sm p-4 bg-white shadow-lg rounded-lg dark:bg-gray-900">
+      <div className="w-full max-w-sm p-4 bg-white shadow-lg rounded-lg dark:bg-base-300">
         <Calendar
           onChange={setDate}
           value={date}

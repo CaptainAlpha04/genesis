@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import { draculaTheme } from './DraculaTheme';
 import { useSelector } from 'react-redux';
+import { set } from 'mongoose';
 
 async function generateCode(language, message, code) {
   const request = {
@@ -44,6 +45,7 @@ const IDE = () => {
   const [editor, setEditor] = useState(null);
   const [loading, setLoading] = useState(false);
   const [output, setOutput] = useState('');
+  const [theme, setTheme] = useState('dracula');
 
   const botReply = useSelector((state) => state.botReply.botReply);
   const lang = useSelector((state) => state.language.language);
@@ -71,6 +73,12 @@ const IDE = () => {
       setLanguage(languageMap[lang] || 'javascript');
     }
   }, [lang]);
+
+  useEffect(() => {
+    const themeLS = localStorage.getItem('theme') === 'dracula' ? 'dracula' : 'vs-light';
+    setTheme(themeLS);
+    
+  }, []);
 
   const handleEditorChange = (value) => {
     setValue(value);
@@ -100,7 +108,6 @@ const IDE = () => {
 
   const handleEditorDidMount = (editor, monaco) => {
     setEditor(editor);
-    const theme = localStorage.getItem('theme') === 'dracula' ? 'dracula' : 'vs-light';
     monaco.editor.setTheme(theme);
 
     editor.addAction({
@@ -250,7 +257,7 @@ const IDE = () => {
         />
 
     </div>
-        <div className='w-2/4 bg-base-300 h-screen mt-20 overflow-scroll'>
+        <div className='w-2/4 bg-base-300 h-full mt-20 overflow-scroll'>
           <div>
             <div className="terminal-box p-4">
               <pre className='text-wrap'>Terminal{">\n"}{output}</pre>
