@@ -75,7 +75,7 @@ function Page() {
         if (session) {
             const fetchUsers = async () => {
             const usersSnapshot = await getDocs(collection(firestore, 'users'));
-            const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), email: doc.data().email }));
             // Filter out the current user
             const filteredUsers = usersList.filter(user => user.email !== session.user.email);
             setUsers(filteredUsers);
@@ -110,7 +110,7 @@ function Page() {
     
         const fetchUsers = async () => {
             const usersSnapshot = await getDocs(collection(firestore, 'users'));
-            const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), email: doc.data().email }));
             setUsers(usersList.filter(user => user.email !== session.user.email));
         };
     
