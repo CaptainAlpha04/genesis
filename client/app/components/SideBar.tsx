@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import ThemeSwitch from "./ThemeSwitch";
 import { doc, getDoc, getFirestore, setDoc } from "firebase/firestore";
 import { firestore } from "../../firebaseconfig";
+import Link from 'next/link'
 
 function SideBar({ currentPage }: { currentPage: string }) {
     const { data: session, status } = useSession();
@@ -62,8 +63,7 @@ function SideBar({ currentPage }: { currentPage: string }) {
                 <div className="divider"></div>
 
                 <div className="tooltip tooltip-right" data-tip="Home">
-                    <button
-                        onClick={() => router.push("/")}
+                    <Link href="/"
                         className={`btn btn-square  ${
                             currentPage === "home"
                                 ? " btn-primary"
@@ -71,7 +71,7 @@ function SideBar({ currentPage }: { currentPage: string }) {
                         }`}
                     >
                         <i className="fi fi-br-home text-lg"></i>
-                    </button>
+                    </Link>
                 </div>
 
                 <div className="tooltip tooltip-right" data-tip="Marketplace">
@@ -88,8 +88,8 @@ function SideBar({ currentPage }: { currentPage: string }) {
                 </div>
 
                 <div className="tooltip tooltip-right" data-tip="Sapiens">
-                    <button
-                        onClick={() => router.push("/sapiens")}
+                    <Link href="/sapiens"
+                        
                         className={`btn btn-square  ${
                             currentPage === "sapiens"
                                 ? " btn-primary"
@@ -97,12 +97,11 @@ function SideBar({ currentPage }: { currentPage: string }) {
                         }`}
                     >
                         <i className="fi fi-br-dna text-lg"></i>
-                    </button>
+                    </Link>
                 </div>
 
                 <div className="tooltip tooltip-right" data-tip="Cybernauts">
-                    <button
-                        onClick={() => router.push("/cybernauts")}
+                    <Link href="/cybernauts"
                         className={`btn btn-square  ${
                             currentPage === "cybernauts"
                                 ? " btn-primary"
@@ -110,12 +109,11 @@ function SideBar({ currentPage }: { currentPage: string }) {
                         }`}
                     >
                         <i className="fi fi-br-chart-network text-lg"></i>
-                    </button>
+                    </Link>
                 </div>
 
                 <div className="tooltip tooltip-right" data-tip="DesignRoom">
-                    <button
-                        onClick={() => router.push("/designroom")}
+                    <Link href="/designroom"
                         className={`btn btn-square  ${
                             currentPage === "designroom"
                                 ? " btn-primary"
@@ -123,11 +121,11 @@ function SideBar({ currentPage }: { currentPage: string }) {
                         }`}
                     >
                         <i className="fi fi-br-palette text-lg"></i>
-                    </button>
+                    </Link>
                 </div>
 
                 <div className="tooltip tooltip-right" data-tip="CodeGround">
-                    <button
+                    <Link href="/codeground"
                         onClick={() => router.push("/codeground")}
                         className={`btn btn-square  ${
                             currentPage === "codeground"
@@ -136,11 +134,11 @@ function SideBar({ currentPage }: { currentPage: string }) {
                         }`}
                     >
                         <i className="fi fi-br-square-terminal text-lg"></i>
-                    </button>
+                    </Link>
                 </div>
+
                 <div className="tooltip tooltip-right" data-tip="WriterPad">
-                    <button
-                        onClick={() => router.push("/writerPad")}
+                    <Link href="/writerpad"
                         className={`btn btn-square  ${
                             currentPage === "writerPad"
                                 ? " btn-primary"
@@ -148,13 +146,12 @@ function SideBar({ currentPage }: { currentPage: string }) {
                         }`}
                     >
                         <i className="fi fi-br-pen-swirl text-lg"></i>
-                    </button>
+                    </Link>
                 </div>
 
 
                 <div className="tooltip tooltip-right" data-tip="Rooms">
-                    <button
-                        onClick={() => router.push("/chatrooms")}
+                    <Link href='/chatrooms'
                         className={`btn btn-square  ${
                             currentPage === "chatrooms"
                                 ? " btn-primary"
@@ -162,12 +159,11 @@ function SideBar({ currentPage }: { currentPage: string }) {
                         }`}
                     >
                         <i className="fi fi-br-users text-lg"></i>
-                    </button>
+                    </Link>
                 </div>
 
                 <div className="tooltip tooltip-right" data-tip="Notifications">
-                    <button
-                        onClick={() => router.push("/notifications")}
+                    <Link href="/notifications"
                         className={`btn btn-square  ${
                             currentPage === "notifications"
                                 ? " btn-primary"
@@ -175,7 +171,7 @@ function SideBar({ currentPage }: { currentPage: string }) {
                         }`}
                     >
                         <i className="fi fi-br-bell text-lg"></i>
-                    </button>
+                    </Link>
                 </div>
             </section>
             {/* Profile Modal */}
