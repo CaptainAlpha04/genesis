@@ -1,8 +1,18 @@
 "use client";
-import WriterPage from "../components/WriterPad";
+import React from "react";
+import SideBar from "../components/SideBar";
 
-function WritePage() {
-  return <WriterPage />;
+function Page() {
+    return (
+        <>
+            <section className="h-screen flex flex-row font-poppins text-base-content">
+                <SideBar currentPage="writerPad" />
+                <div className="flex-grow flex items-center justify-center">
+                    <h1 className="text-4xl font-bold">Coming Soon</h1>
+                </div>
+            </section>
+        </>
+    );
 }
 
-export default WritePage;
+export default Page;
