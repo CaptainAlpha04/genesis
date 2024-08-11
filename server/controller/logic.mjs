@@ -4,7 +4,7 @@ import ActorModel from "../middleware/ActorModel.mjs";
 import ManagerModel from "../middleware/ManagerModel.mjs";
 import tasks from "../tasks/tasks.mjs";
 import { generateImagesLinks } from 'bimg';
-import e from "express";
+import User from "../model/User.js";
 
 // Generating a model for a bot
 export async function GenerateModel(prompt) {
@@ -67,6 +67,18 @@ export async function generateUserImage(prompt) {
         return null;
     }
 }
+
+// Set up a timer to create a new bot based on number of users
+setInterval(async () => {
+    const numOfUsers = await User.countDocuments();
+    const numOfBots = await bot.countDocuments();
+    if (numOfUsers > numOfBots) {
+        const diff = numOfUsers - numOfBots;
+        for (let i = 0; i < diff; i++) {
+            await GenerateModel('Generate a random and unique persona');
+        }
+    }
+}, 1000 * 60 * 60); // Check every hour, in prod should be every week 
 
 // Shutdown the server gracefully
 export function shutdown() {

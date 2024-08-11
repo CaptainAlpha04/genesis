@@ -41,12 +41,6 @@ app.get('/', (req, res) => {
     res.send({ message: 'Simulation started' });
 });
 
-// await GenerateModel('Generate a south-american medical doctor persona')
-// await GenerateModel('Generate an Indian woman');
-// await GenerateModel('Generate a caucasian male');
-// await GenerateModel('Generate a palestinian woman');
-// await GenerateModel('Generate a Asian American male');
-
 // Conversation with bot based on UserID
 app.post('/conversation/:userID', handleConversation);
 

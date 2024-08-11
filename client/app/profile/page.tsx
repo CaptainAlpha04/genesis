@@ -67,7 +67,7 @@ function Page() {
         if (!session) {
             router.push("/login");
         } else {
-            console.log("User ID:", session.user.id);
+            console.log("User ID:", session?.user?.id);
         }
     }, [router, session, status]);
 
