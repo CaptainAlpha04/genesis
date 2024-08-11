@@ -4,7 +4,7 @@ import ActorModel from "../middleware/ActorModel.mjs";
 import ManagerModel from "../middleware/ManagerModel.mjs";
 import tasks from "../tasks/tasks.mjs";
 import { generateImagesLinks } from 'bimg';
-import User from "../model/User.js";
+import User from "../model/User.mjs";
 
 // Generating a model for a bot
 export async function GenerateModel(prompt) {
